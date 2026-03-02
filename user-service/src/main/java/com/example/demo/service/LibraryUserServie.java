@@ -14,4 +14,5 @@ public interface LibraryUserServie {
 
 	public List<LibraryUser> findAll();
 
+	public void deleteById(Long id);
 }
