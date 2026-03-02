@@ -1,13 +1,18 @@
 package com.example.demo.service;
 
+
 import java.util.List;
 
+import org.springframework.stereotype.Service;
+
+import com.example.demo.dto.BookDto;
 import com.example.demo.entity.Book;
 
+@Service
 public interface BookService {
 	public Book createBook(Book book);
 
-	public Book updateBook(Long id,Book book);
+	public Book updateBook(Long id, BookDto book);
 
 	public Book getByIsbn(String isbn);
 
