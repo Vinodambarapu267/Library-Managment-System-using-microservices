@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.BookDto;
 import com.example.demo.entity.Book;
+import com.example.demo.exception.BookNotFoundException;
 import com.example.demo.repository.BookRepository;
 import com.example.demo.service.BookService;
 import com.example.demo.utility.BookStatus;
@@ -25,7 +26,7 @@ public class BookServiceImpl implements BookService {
 
 	@Override
 	public Book updateBook(Long id, BookDto bookDto) {
-		Book existedBook = bookRepository.findById(id).orElseThrow(() -> new RuntimeException("Book not Found"));
+		Book existedBook = bookRepository.findById(id).orElseThrow(() -> new BookNotFoundException("Book not Found ID : "+id));
 		existedBook.setAuthor(bookDto.getAuthor());
 		existedBook.setTitle(bookDto.getTitle());
 		existedBook.setCopiesAvailablr(bookDto.getCopiesAvailablr());
@@ -40,14 +41,14 @@ public class BookServiceImpl implements BookService {
 	@Override
 	public Book getByIsbn(String isbn) {
 		Book byisbn = bookRepository.findByIsbn(isbn.trim())
-				.orElseThrow(() -> new RuntimeException("Book is not found with this ISBN : " + isbn));
+				.orElseThrow(() -> new BookNotFoundException("Book is not found with this ISBN : " + isbn));
 
 		return byisbn;
 	}
 
 	@Override
 	public void deleteBook(String isbn) {
-		Book delete = bookRepository.findByIsbn(isbn).orElseThrow(() -> new RuntimeException("Book is not Found "));
+		Book delete = bookRepository.findByIsbn(isbn).orElseThrow(() -> new BookNotFoundException("Book is not Found "));
 		bookRepository.delete(delete);
 	}
 
@@ -55,7 +56,7 @@ public class BookServiceImpl implements BookService {
 	public List<Book> findAll() {
 		List<Book> all = bookRepository.findAll();
 		if (all.isEmpty()) {
-			throw new RuntimeException("Libary is empty");
+			throw new BookNotFoundException("Library is empty");
 		}
 		return all;
 	}
@@ -65,7 +66,7 @@ public class BookServiceImpl implements BookService {
 		List<Book> byTitleContainingIgnoreCase = bookRepository.findByTitleContainingIgnoreCase(title);
 
 		if (byTitleContainingIgnoreCase.isEmpty()) {
-			throw new RuntimeException("No book found under this title : " + title);
+			throw new BookNotFoundException("No book found under this title : " + title);
 		}
 		return byTitleContainingIgnoreCase;
 	}
@@ -74,7 +75,7 @@ public class BookServiceImpl implements BookService {
 	public List<Book> findByAuthorContainingIgnoreCase(String author) {
 		List<Book> byAuthorContainingIgnoreCase = bookRepository.findByAuthorContainingIgnoreCase(author);
 		if (byAuthorContainingIgnoreCase.isEmpty()) {
-			throw new RuntimeException("No book found under this title : " + author);
+			throw new BookNotFoundException("No book found under this title : " + author);
 		}
 		return byAuthorContainingIgnoreCase;
 	}
