@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import java.net.HttpURLConnection;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.demo.dto.BookDto;
 import com.example.demo.entity.Book;
 import com.example.demo.service.BookService;
+import com.example.demo.utility.ResponseMessage;
+import com.example.demo.utility.ResponseStatus;
 
 @RestController
 @RequestMapping("/api/v1/books")
@@ -28,43 +31,76 @@ public class BookController {
 	@PostMapping("/addbook")
 	public ResponseEntity<?> createBook(@RequestBody Book book) {
 		Book save = bookService.createBook(book);
-		return ResponseEntity.ok(save);
+		if (save != null) {
+			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
+					"Book Created Successfully", save));
+		}
+		return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.FAILURE.name(),
+				"Book Created failed.."));
 
 	}
 
 	@PutMapping("/updatebook/{id}")
 	public ResponseEntity<?> updateBook(@PathVariable Long id, @RequestBody BookDto bookDto) {
 		Book updateBook = bookService.updateBook(id, bookDto);
-		return ResponseEntity.ok(updateBook);
+		if (updateBook != null) {
+			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
+					"Book updated Successfully", updateBook));
+		}
+		return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.FAILURE.name(),
+				"Book updated failed.."));
 	}
 
 	@GetMapping("/getbyisbn/")
 	public ResponseEntity<?> findByisbn(@RequestParam String isbn) {
 		Book byIsbn = bookService.getByIsbn(isbn);
-		return ResponseEntity.ok(byIsbn);
+		if (byIsbn != null) {
+			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
+					"Book retrived Successfully", byIsbn));
+		}
+		return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.FAILURE.name(),
+				"Book retrived failed.."));
 	}
 
 	@DeleteMapping("/deletebook/{isbn}")
 	public ResponseEntity<?> removeByisbn(@PathVariable String isbn) {
 		bookService.deleteBook(isbn);
-		return ResponseEntity.ok("deleted successfully");
+		
+		return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
+				"Book deleted succesfully"));
 	}
 
 	@GetMapping
 	public ResponseEntity<?> findAll() {
-		return ResponseEntity.ok(bookService.findAll());
+		List<Book> all = bookService.findAll();
+		if (!all.isEmpty()) {
+			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
+					"All Book retrived Successfully", all));
+		}
+		return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.FAILURE.name(),
+				"Books retrived failed.."));
 	}
 
 	@GetMapping("/findbytitle")
 	public ResponseEntity<?> findByTitleContainingIgnoreCase(@RequestParam String title) {
 		List<Book> byTitleContainingIgnoreCase = bookService.findByTitleContainingIgnoreCase(title);
-		return ResponseEntity.ok(byTitleContainingIgnoreCase);
+		if (!byTitleContainingIgnoreCase.isEmpty()) {
+			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
+					"All Book retrived Successfully", byTitleContainingIgnoreCase));
+		}
+		return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.FAILURE.name(),
+				"Books retrived failed.."));
 	}
 
 	@GetMapping("/findbyauthor/{author}")
 	public ResponseEntity<?> findByAuthorContainingIgnoreCase(@PathVariable String author) {
 		List<Book> byAuthorContainingIgnoreCase = bookService.findByAuthorContainingIgnoreCase(author);
-		return ResponseEntity.ok(byAuthorContainingIgnoreCase);
+		if (!byAuthorContainingIgnoreCase.isEmpty()) {
+			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
+					"All Book retrived Successfully", byAuthorContainingIgnoreCase));
+		}
+		return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.FAILURE.name(),
+				"Books retrived failed.."));
 	}
 
 	@GetMapping("/totalbooks")
