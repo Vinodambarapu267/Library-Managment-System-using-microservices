@@ -62,20 +62,27 @@ public class BookServiceImpl implements BookService {
 
 	@Override
 	public List<Book> findByTitleContainingIgnoreCase(String title) {
+		List<Book> byTitleContainingIgnoreCase = bookRepository.findByTitleContainingIgnoreCase(title);
 
-		return null;
+		if (byTitleContainingIgnoreCase.isEmpty()) {
+			throw new RuntimeException("No book found under this title : " + title);
+		}
+		return byTitleContainingIgnoreCase;
 	}
 
 	@Override
 	public List<Book> findByAuthorContainingIgnoreCase(String author) {
-
-		return null;
+		List<Book> byAuthorContainingIgnoreCase = bookRepository.findByAuthorContainingIgnoreCase(author);
+		if (byAuthorContainingIgnoreCase.isEmpty()) {
+			throw new RuntimeException("No book found under this title : " + author);
+		}
+		return byAuthorContainingIgnoreCase;
 	}
 
 	@Override
 	public Long totalBooksCount() {
-
-		return null;
+		long count = bookRepository.count();
+		return count;
 	}
 
 	private static String isbnGeneate(String isbn) {

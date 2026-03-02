@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -52,4 +54,23 @@ public class BookController {
 	public ResponseEntity<?> findAll() {
 		return ResponseEntity.ok(bookService.findAll());
 	}
+
+	@GetMapping("/findbytitle")
+	public ResponseEntity<?> findByTitleContainingIgnoreCase(@RequestParam String title) {
+		List<Book> byTitleContainingIgnoreCase = bookService.findByTitleContainingIgnoreCase(title);
+		return ResponseEntity.ok(byTitleContainingIgnoreCase);
+	}
+
+	@GetMapping("/findbyauthor/{author}")
+	public ResponseEntity<?> findByAuthorContainingIgnoreCase(@PathVariable String author) {
+		List<Book> byAuthorContainingIgnoreCase = bookService.findByAuthorContainingIgnoreCase(author);
+		return ResponseEntity.ok(byAuthorContainingIgnoreCase);
+	}
+
+	@GetMapping("/totalbooks")
+	public Long totalBooksCount() {
+		Long totalBooksCount = bookService.totalBooksCount();
+		return totalBooksCount;
+	}
+
 }
