@@ -23,5 +23,11 @@ public class GlobalExceptionHandler {
 				exception.getLocalizedMessage(), request.getDescription(false));
 		return ResponseEntity.ok(errorMessage);
 	}
+	@ExceptionHandler(BookNotAvailableException.class)
+	public ResponseEntity<?> BookNotAvailable(BookNotAvailableException exception, WebRequest request) {
+		ErrorMessage errorMessage = new ErrorMessage(LocalDateTime.now(), HttpURLConnection.HTTP_BAD_REQUEST,
+				exception.getLocalizedMessage(), request.getDescription(false));
+		return ResponseEntity.ok(errorMessage);
+	}
 
 }

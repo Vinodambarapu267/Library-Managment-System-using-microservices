@@ -11,9 +11,9 @@ public class BookDto {
 	private String isbn;
 	private String title;
 	private String author;
-	private String copiesAvailablr;
-	private String totalcopies;
+	private Integer copiesAvailable;
+	private Integer totalCopies;
 	private String category;
 	private Integer publishedYear;
-	private String bookStatus;
+	private String bookStatus = "AVAILABLE";
 }

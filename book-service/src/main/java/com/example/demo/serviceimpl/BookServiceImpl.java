@@ -26,12 +26,13 @@ public class BookServiceImpl implements BookService {
 
 	@Override
 	public Book updateBook(Long id, BookDto bookDto) {
-		Book existedBook = bookRepository.findById(id).orElseThrow(() -> new BookNotFoundException("Book not Found ID : "+id));
+		Book existedBook = bookRepository.findById(id)
+				.orElseThrow(() -> new BookNotFoundException("Book not Found ID : " + id));
 		existedBook.setAuthor(bookDto.getAuthor());
 		existedBook.setTitle(bookDto.getTitle());
-		existedBook.setCopiesAvailablr(bookDto.getCopiesAvailablr());
-		existedBook.setTotalcopies(bookDto.getTotalcopies());
-		int copies = Integer.parseInt(bookDto.getCopiesAvailablr() != null ? bookDto.getCopiesAvailablr() : "0");
+		existedBook.setCopiesAvailable(bookDto.getCopiesAvailable());
+		existedBook.setTotalCopies(bookDto.getTotalCopies());
+		int copies = bookDto.getCopiesAvailable() != null ? bookDto.getCopiesAvailable() : 0;
 		existedBook.setBookStatus(copies > 0 ? BookStatus.AVAILABLE.name() : BookStatus.OUT_OF_STOCK.name());
 		existedBook.setCategory(bookDto.getCategory());
 		Book update = bookRepository.save(existedBook);
@@ -48,7 +49,8 @@ public class BookServiceImpl implements BookService {
 
 	@Override
 	public void deleteBook(String isbn) {
-		Book delete = bookRepository.findByIsbn(isbn).orElseThrow(() -> new BookNotFoundException("Book is not Found "));
+		Book delete = bookRepository.findByIsbn(isbn)
+				.orElseThrow(() -> new BookNotFoundException("Book is not Found "));
 		bookRepository.delete(delete);
 	}
 

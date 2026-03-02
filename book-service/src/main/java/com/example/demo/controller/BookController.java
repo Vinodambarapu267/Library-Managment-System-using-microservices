@@ -4,6 +4,7 @@ import java.net.HttpURLConnection;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.BookDto;
 import com.example.demo.entity.Book;
+import com.example.demo.service.BookCopiesUpdateService;
 import com.example.demo.service.BookService;
 import com.example.demo.utility.ResponseMessage;
 import com.example.demo.utility.ResponseStatus;
@@ -27,6 +29,8 @@ public class BookController {
 
 	@Autowired
 	private BookService bookService;
+	@Autowired
+	private BookCopiesUpdateService bookCopiesUpdateService;
 
 	@PostMapping("/addbook")
 	public ResponseEntity<?> createBook(@RequestBody Book book) {
@@ -65,7 +69,7 @@ public class BookController {
 	@DeleteMapping("/deletebook/{isbn}")
 	public ResponseEntity<?> removeByisbn(@PathVariable String isbn) {
 		bookService.deleteBook(isbn);
-		
+
 		return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
 				"Book deleted succesfully"));
 	}
@@ -107,6 +111,30 @@ public class BookController {
 	public Long totalBooksCount() {
 		Long totalBooksCount = bookService.totalBooksCount();
 		return totalBooksCount;
+	}
+
+	// Copies Updating in library
+	
+	
+	@PutMapping("/{id}/copies/{newCopies}")
+	public ResponseEntity<?> updateCopies(@PathVariable Long id, @PathVariable int newCopies) {
+		Book updatedBook = bookCopiesUpdateService.updateTotalBookCopies(id, newCopies);
+		return ResponseEntity.ok(new ResponseMessage(HttpStatus.OK.value(), // ✅ 200 OK
+				ResponseStatus.SUCCESS.name(), "Book copies updated successfully", updatedBook));
+	}
+
+	@PostMapping("/{title}/issue")
+	public ResponseEntity<?> issueBook(@PathVariable String title) {
+		Book issuedBook = bookCopiesUpdateService.issueBook(title); // ✅ ID not title
+		return ResponseEntity.ok(new ResponseMessage(HttpStatus.OK.value(), // ✅ 200 OK
+				ResponseStatus.SUCCESS.name(), "Book issued successfully", issuedBook));
+	}
+
+	@PostMapping("/{title}/return")
+	public ResponseEntity<?> returnBook(@PathVariable String title) {
+		Book returnedBook = bookCopiesUpdateService.returnBook(title);
+		return ResponseEntity.ok(new ResponseMessage(HttpStatus.OK.value(), // ✅ 200 OK
+				ResponseStatus.SUCCESS.name(), "Book returned successfully", returnedBook));
 	}
 
 }
