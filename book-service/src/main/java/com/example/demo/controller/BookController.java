@@ -114,8 +114,7 @@ public class BookController {
 	}
 
 	// Copies Updating in library
-	
-	
+
 	@PutMapping("/{id}/copies/{newCopies}")
 	public ResponseEntity<?> updateCopies(@PathVariable Long id, @PathVariable int newCopies) {
 		Book updatedBook = bookCopiesUpdateService.updateTotalBookCopies(id, newCopies);
@@ -135,6 +134,12 @@ public class BookController {
 		Book returnedBook = bookCopiesUpdateService.returnBook(title);
 		return ResponseEntity.ok(new ResponseMessage(HttpStatus.OK.value(), // ✅ 200 OK
 				ResponseStatus.SUCCESS.name(), "Book returned successfully", returnedBook));
+	}
+
+	@GetMapping("/{title}/availibility")
+	public ResponseEntity<?> checkAvailability(@PathVariable String title) {
+		Integer availabiltyBook = bookCopiesUpdateService.availabiltyBook(title);
+		return ResponseEntity.ok("Available copies : "+availabiltyBook);
 	}
 
 }

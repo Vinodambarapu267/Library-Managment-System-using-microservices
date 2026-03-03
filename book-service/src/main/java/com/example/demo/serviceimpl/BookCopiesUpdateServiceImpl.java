@@ -30,8 +30,11 @@ public class BookCopiesUpdateServiceImpl implements BookCopiesUpdateService {
 	@Override
 	public Book issueBook(String title) {
 		Book book = bookRepository.findByTitle(title).orElseThrow(() -> new BookNotFoundException("Book not found"));
-		book.issueBook();
-		return bookRepository.save(book);
+		if (book.getCopiesAvailable() > 0) {
+			book.issueBook();
+			return bookRepository.save(book);
+		}
+		throw new RuntimeException("This book available right now");
 	}
 
 	@Override
@@ -39,6 +42,13 @@ public class BookCopiesUpdateServiceImpl implements BookCopiesUpdateService {
 		Book book = bookRepository.findByTitle(title).orElseThrow(() -> new BookNotFoundException("Book not found"));
 		book.returnBook();
 		return bookRepository.save(book);
+	}
+
+	@Override
+	public Integer availabiltyBook(String title) {
+		Book book = bookRepository.findByTitle(title).orElseThrow(() -> new RuntimeException("Book Not found"));
+		Integer copiesAvailable = book.getCopiesAvailable();
+		return copiesAvailable;
 	}
 
 }

@@ -9,4 +9,5 @@ public interface BookCopiesUpdateService {
 
 	public Book returnBook(String title);
 
+	public Integer availabiltyBook(String isbn);
 }

@@ -39,7 +39,6 @@ public class Book {
 			throw new IllegalStateException("Invalid copy counts");
 		}
 	}
-
 	// Enhanced methods
 	public void issueBook() {
 		if (copiesAvailable <= 0) {
