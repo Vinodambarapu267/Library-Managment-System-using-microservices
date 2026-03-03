@@ -1,175 +1,307 @@
-# Library-Managment-System-using-microservices
-A scalable Library Management System built with Spring Boot 3+ and Spring Cloud microservices architecture. Manages books (MongoDB), users/loans/fines (MySQL) without notification service. Features Eureka discovery, API Gateway routing, Feign inter-service communication, and Zipkin tracing.
+# 📚 Library Management System — Microservices Architecture
 
-The system consists of four independent services:
-
-- **Book-Catalog Service** (MongoDB) – manages book metadata and inventory.
-- **User-Service** (MySQL) – handles user registration, roles, and JWT authentication.
-- **Loan-Service** (MySQL) – orchestrates borrowing and returning of books.
-- **Fine-Service** (MySQL) – calculates overdue fines periodically.
-
-All services register with **Eureka** for discovery, communicate via **Feign clients**, and are exposed through an **API Gateway**. **Zipkin** provides end‑to‑end request tracing.
+> A scalable, cloud-native Library Management System built with **Spring Boot 3+** and **Spring Cloud**.  
+> Manages books, users, loans, and fines across independent services with full observability.
 
 ---
 
-## Services
+## 🗂️ Table of Contents
 
-### 1. Book-Catalog Service
-- **Database**: MongoDB (non‑relational, flexible schema for book metadata).
-- **Domain**: `Book` entity with fields: `isbn` (primary key), `title`, `author`, `categories`, `copiesAvailable`.
-- **Endpoints**:
-  - `POST /books` – add a new book.
-  - `GET /books/{isbn}` – retrieve book details.
-  - `GET /books/search?title=xyz` – search books by title.
-- **Function**: Provides availability checks for the Loan-Service via Feign.
-
-### 2. User-Service
-- **Database**: MySQL (relational, ACID compliant for user accounts).
-- **Domain**: `LibraryUser` with fields: `id`, `email`, `role` (MEMBER/LIBRARIAN).
-- **Endpoints**:
-  - `POST /users/register` – create a new user.
-  - `GET /users/{id}/isMember` – check if a user is an active member.
-- **Security**: JWT authentication integrated (tokens are issued/validated, but details are out of scope for this README).
-
-### 3. Loan-Service
-- **Database**: MySQL (ensures transactional integrity for loan operations).
-- **Domain**: `Loan` entity with fields: `id`, `isbn`, `userId`, `borrowedAt`, `dueDate`, `returnedAt`, `status`.
-- **Business logic**:
-  - Before creating a loan, validate book availability (`Book-Catalog`) and user membership (`User-Service`) via Feign clients.
-  - Atomically decrement/increment `copiesAvailable` in the Book-Catalog service.
-- **Endpoints**:
-  - `POST /loans/borrow` – borrow a book.
-  - `PUT /loans/{id}/return` – return a book (updates loan status and book inventory).
-
-### 4. Fine-Service
-- **Database**: MySQL.
-- **Domain**: `Fine` entity with fields: `loanId`, `amount`, `overdueSince`, `status` (PENDING/PAID).
-- **Background processing**:
-  - A `@Scheduled` cron job runs daily, scanning all active loans that are overdue.
-  - For each overdue loan, it calculates the fine as `daysOverdue * dailyFineRate` and creates/updates a `Fine` record.
-- **Endpoints**: (Optional endpoints for querying/paying fines could be added; not specified in the original design.)
+- [Overview](#-overview)
+- [Architecture](#-architecture)
+- [Services](#-services)
+- [Communication Patterns](#-communication-patterns)
+- [Technology Stack](#-technology-stack)
+- [Setup & Running](#-setup--running)
+- [Testing the System](#-testing-the-system)
+- [References](#-references)
 
 ---
 
-## Communication Patterns
+## 🌐 Overview
 
-- **Service Discovery**: All services (including the gateway) register with a **Eureka server**.
-- **Synchronous HTTP calls**: Services use **Feign clients** with Spring Cloud LoadBalancer to call each other.
-  - Loan-Service declares Feign clients to Book-Catalog and User-Service:
-    ```java
-    @FeignClient(name = "book-catalog")
-    public interface BookClient {
-        @GetMapping("/books/{isbn}/available")
-        boolean isAvailable(@PathVariable String isbn);
-    }
+This system is composed of **four independent microservices**, each with its own database, business logic, and API surface. They are wired together via **Eureka service discovery**, **Feign HTTP clients**, and exposed to the outside world through an **API Gateway**.
 
-    @FeignClient(name = "user-service")
-    public interface UserClient {
-        @GetMapping("/users/{id}/isMember")
-        boolean isActiveMember(@PathVariable String id);
-    }
-    ```
-- **API Gateway**: All external requests go through the **Spring Cloud Gateway**, which routes:
-  - `/books/**` → book-catalog service
-  - `/loans/**` → loan-service
-  - (Other services can be added similarly)
-- **Distributed Tracing**: **Zipkin** is used to trace requests across service boundaries. Trace and span IDs are automatically propagated via Sleuth.
+```
+             Client
+               │
+               ▼
+   ┌───────────────────────┐
+   │     API Gateway       │  :8080
+   └─────────────┬─────────┘
+                 │
+  ┌──────────────┼──────────────────┐
+  ▼              ▼                  ▼
+Book-Catalog  Loan-Service     User-Service
+(MySQL)       (MySQL)          (MySQL)
+                │
+                ▼
+             Fine-Service
+              (MySQL)
+```
 
----
-
-## Technology Stack
-
-- **Java 17+**
-- **Spring Boot 3+**
-- **Spring Cloud** (Eureka, Gateway, OpenFeign, Sleuth)
-- **Databases**:
-  - MongoDB (Book-Catalog)
-  - MySQL (User, Loan, Fine)
-- **Build tool**: Maven (multi‑module project)
-- **Testing**: JUnit 5, Mockito
-- **Tracing**: Zipkin
+All services register with **Eureka** at `localhost:8761`.  
+Distributed traces are captured by **Zipkin** at `localhost:9411`.
 
 ---
 
-## Setup and Running
+## 🏛️ Architecture
+
+| Component         | Role                                                        | Port  |
+|-------------------|-------------------------------------------------------------|-------|
+| **Eureka Server** | Service registry & discovery                                | 8761  |
+| **API Gateway**   | Single entry point, routes all external requests            | 8090  |
+| **Book-Catalog**  | Manages book metadata & inventory (MongoDB)                 | 9090  |
+| **User-Service**  | User registration, roles, JWT authentication (MySQL)        | 9091  |
+| **Loan-Service**  | Borrow / return orchestration (MySQL)                       | 9092  |
+| **Fine-Service**  | Overdue fine calculation via scheduled job (MySQL)          | 9093  |
+| **Zipkin**        | End-to-end distributed tracing                              | 9411  |
+
+---
+
+## 🔧 Services
+
+### 📖 1. Book-Catalog Service
+> **Database**: MySQL — flexible schema for book metadata
+
+| Field             | Type     | Description                        |
+|-------------------|----------|------------------------------------|
+| `isbn`            | String   | Primary key                        |
+| `title`           | String   | Book title                         |
+| `author`          | String   | Author name                        |
+| `categories`      | List     | Genre / topic tags                 |
+| `copiesAvailable` | Integer  | Real-time availability count       |
+
+**Endpoints:**
+
+| Method | Path                        | Description                      |
+|--------|-----------------------------|----------------------------------|
+| `POST` | `/books`                    | Add a new book                   |
+| `GET`  | `/books/{isbn}`             | Retrieve book details            |
+| `GET`  | `/books/search?title=xyz`   | Search books by title            |
+| `GET`  | `/books/{isbn}/available`   | *(Internal)* Check availability  |
+
+---
+
+### 👤 2. User-Service
+> **Database**: MySQL — ACID-compliant user accounts
+
+| Field   | Type   | Description                    |
+|---------|--------|--------------------------------|
+| `id`    | Long   | Auto-generated primary key     |
+| `email` | String | Unique user email              |
+| `role`  | Enum   | `MEMBER` or `LIBRARIAN`        |
+
+**Endpoints:**
+
+| Method | Path                  | Description                          |
+|--------|-----------------------|--------------------------------------|
+| `POST` | `/users/register`     | Register a new user                  |
+| `GET`  | `/users/{id}/isMember`| *(Internal)* Check active membership |
+
+> 🔐 JWT authentication is integrated — tokens are issued and validated per request.
+
+---
+
+### 🔄 3. Loan-Service
+> **Database**: MySQL — transactional integrity for borrow/return operations
+
+| Field        | Type      | Description                        |
+|--------------|-----------|------------------------------------|
+| `id`         | Long      | Primary key                        |
+| `isbn`       | String    | Book being borrowed                |
+| `userId`     | Long      | Borrowing user                     |
+| `borrowedAt` | LocalDate | Loan start date                    |
+| `dueDate`    | LocalDate | Expected return date               |
+| `returnedAt` | LocalDate | Actual return date (nullable)      |
+| `status`     | Enum      | `ACTIVE`, `RETURNED`, `OVERDUE`    |
+
+**Endpoints:**
+
+| Method  | Path               | Description                         |
+|---------|--------------------|-------------------------------------|
+| `POST`  | `/loans/borrow`    | Borrow a book                       |
+| `PUT`   | `/loans/{id}/return` | Return a book                     |
+
+**Before creating a loan, the service:**
+1. ✅ Validates book availability via `book-catalog` Feign client
+2. ✅ Verifies active membership via `user-service` Feign client
+3. ✅ Atomically decrements `copiesAvailable` in Book-Catalog
+
+---
+
+### 💰 4. Fine-Service
+> **Database**: MySQL — tracks overdue fines
+
+| Field         | Type      | Description                     |
+|---------------|-----------|---------------------------------|
+| `loanId`      | Long      | Reference to the overdue loan   |
+| `amount`      | BigDecimal| Calculated fine amount          |
+| `overdueSince`| LocalDate | When the loan became overdue    |
+| `status`      | Enum      | `PENDING` or `PAID`             |
+
+**Background Processing:**
+- A `@Scheduled` cron job runs **daily**, scanning all active overdue loans
+- Fine formula: `daysOverdue × dailyFineRate`
+- Creates or updates `Fine` records automatically
+
+---
+
+## 🔗 Communication Patterns
+
+### Service Discovery
+All services (including the gateway) self-register with **Eureka Server** on startup.
+
+### API Gateway Routing
+
+| Incoming Path | Routed To          |
+|---------------|--------------------|
+| `/books/**`   | `book-catalog`     |
+| `/loans/**`   | `loan-service`     |
+| `/users/**`   | `user-service`     |
+| `/fines/**`   | `fine-service`     |
+
+### Distributed Tracing
+**Zipkin** + **Spring Cloud Sleuth** automatically propagate trace/span IDs across all service boundaries.  
+View traces at: `http://localhost:9411`
+
+---
+
+## 🛠️ Technology Stack
+
+| Category          | Technology                                       |
+|-------------------|--------------------------------------------------|
+| Language          | Java 17+                                         |
+| Framework         | Spring Boot 3+                                   |
+| Cloud             | Spring Cloud (Eureka, Gateway, OpenFeign, Sleuth)|
+| Databases         | MySQL (Book-Catalog), MySQL (User, Loan, Fine)   |
+| Build Tool        | Maven (multi-module project)                     |
+| Security          | JWT Authentication                               |
+| Testing           | JUnit 5, Mockito                                 |
+| Tracing           | Zipkin                                           |
+| Containerization  | Docker (optional)                                |
+
+---
+
+## 🚀 Setup & Running
 
 ### Prerequisites
-- Java 17 or later
-- Maven
-- Docker (optional, for running MySQL, MongoDB, and Zipkin easily)
 
-### Step 1: Start Infrastructure Services
-It is recommended to run Zipkin, MySQL, and MongoDB using Docker:
+- ☑️ Java 17 or later
+- ☑️ Maven
+- ☑️ Docker *(optional, recommended for infrastructure)*
+
+---
+
+### Step 1 — Start Infrastructure Services
+
+**Recommended: use Docker**
+
 ```bash
-# Zipkin
+# Zipkin — distributed tracing UI
 docker run -d -p 9411:9411 openzipkin/zipkin
 
-# MySQL (for User, Loan, Fine)
+# MySQL — for User, Loan, Fine services
 docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root mysql:8
 
-# MongoDB (for Book-Catalog)
-docker run -d -p 27017:27017 mongo:6
-```
-Alternatively, you can run Zipkin directly from its JAR:
-```bash
-java -jar zipkin.jar
-```
 
-### Step 2: Start Eureka Server
+> **Alternative:** Run Zipkin directly from its JAR:
+> ```bash
+> java -jar zipkin.jar
+> ```
+
+---
+
+### Step 2 — Start Eureka Server
+
 ```bash
 cd eureka-server
 mvn spring-boot:run
 ```
 
-### Step 3: Start the Microservices
-In separate terminals, run each service:
+> Eureka dashboard: `http://localhost:8761`
+
+---
+
+### Step 3 — Start Microservices
+
+Open **separate terminals** for each service:
+
 ```bash
-cd book-catalog
-mvn spring-boot:run
+# Terminal 1
+cd book-service  && mvn spring-boot:run
 
-cd user-service
-mvn spring-boot:run
+# Terminal 2
+cd user-service && mvn spring-boot:run
 
-cd loan-service
-mvn spring-boot:run
+# Terminal 3
+cd loan-service && mvn spring-boot:run
 
-cd fine-service
-mvn spring-boot:run
+# Terminal 4
+cd fine-service && mvn spring-boot:run
 ```
 
-### Step 4: Start API Gateway
+---
+
+### Step 4 — Start API Gateway
+
 ```bash
 cd api-gateway
 mvn spring-boot:run
 ```
 
-All services will register with Eureka (typically on `localhost:8761`). The gateway listens on port `8080`.
+> Gateway listens on: `http://localhost:8080`
 
 ---
 
-## Testing
+### ✅ Startup Checklist
 
-Once all services are up, you can test a borrow flow via the gateway:
+| Service         | Status Check URL                          |
+|-----------------|-------------------------------------------|
+| Eureka          | `http://localhost:8761`                   |
+| API Gateway     | `http://localhost:8090/actuator/health`   |
+| Zipkin UI       | `http://localhost:9411`                   |
+
+---
+
+## 🧪 Testing the System
+
+### End-to-End Borrow Flow
 
 ```bash
-curl -X POST http://localhost:8080/loans/borrow \
+curl -X POST http://localhost:8090/loans/borrow \
   -H "Content-Type: application/json" \
-  -d '{"isbn":"1234567890", "userId":"1"}'
+  -d '{"isbn": "1234567890", "userId": "1"}'
 ```
 
-This request triggers:
-1. Gateway → Loan-Service
-2. Loan-Service calls `book-catalog` to check availability.
-3. Loan-Service calls `user-service` to verify membership.
-4. Loan-Service creates the loan and updates the book’s `copiesAvailable`.
-5. Zipkin captures the entire trace – view it at `http://localhost:9411`.
+**What happens behind the scenes:**
+
+```
+1. Client ──────────────────────► API Gateway (:8080)
+2. Gateway ─────────────────────► Loan-Service
+3. Loan-Service ────────────────► Book-service  (is book available?)
+4. Loan-Service ────────────────► User-Service  (is user an active member?)
+5. Loan-Service ────────────────► Book-service  (decrement copiesAvailable)
+6. Loan-Service ─── creates Loan record in MySQL
+7. Zipkin ─────── captures full trace across all hops
+```
+
+> 📊 **View the full trace at:** `http://localhost:9411`
 
 ---
 
-## References
+## 📚 References
 
-- [Spring Boot Microservices Example – GeeksforGeeks](https://www.geeksforgeeks.org/springboot/java-spring-boot-microservices-example-step-by-step-guide/)
-- [Spring.io Microservices](https://spring.io/microservices)
-- [Auth0 Blog – Java Spring Boot Microservices](https://auth0.com/blog/java-spring-boot-microservices/)
-- [Building Microservices with Spring Boot – YouTube](https://www.youtube.com/watch?v=Us5acS_3pik)
-- [Example Repository (Inspiration)](https://github.com/ioeltadeu/library-management)
+- [Spring Boot Microservices — GeeksforGeeks](https://www.geeksforgeeks.org/springboot/java-spring-boot-microservices-example-step-by-step-guide/)
+- [Spring.io Microservices Overview](https://spring.io/microservices)
+- [Auth0 Blog — Java Spring Boot Microservices](https://auth0.com/blog/java-spring-boot-microservices/)
+- [Building Microservices with Spring Boot — YouTube](https://www.youtube.com/watch?v=Us5acS_3pik)
+- [Inspiration Repository](https://github.com/ioeltadeu/library-management)
+
+---
+
+<div align="center">
+
+Built with ☕ Java · 🍃 Spring Boot · ☁️ Spring Cloud
+
+</div>
