@@ -1,6 +1,7 @@
 package com.example.demo.serviceimpl;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -48,11 +49,43 @@ public class LoanServiceImpl {
 		return save;
 	}
 
-//	public Loan returnBook(Long loanId) {
-//		Loan loan = loanRepository.findById(loanId).orElseThrow(()-> new RuntimeException("Loan not found"));
-//	if(loan.getStatus()==LoanStatus.RETURNED.name()) {
-//		throw new RuntimeException("");
-//	}
-//		
-//	}
+	public Loan returnBook(Long loanId) {
+	Loan existedLoan = loanRepository.findById(loanId).orElseThrow(() -> new RuntimeException("Loan not found"));
+	if (existedLoan.getStatus() == LoanStatus.RETURNED.name()) {
+		throw new RuntimeException(" Already Returned the book : " + existedLoan.getTitle());
+	}
+	UserRoleStatus checkStatus = userClient.checkStatus(existedLoan.getUserId());
+	if (!checkStatus.isAllowToBorrow()) {
+		throw new RuntimeException("User not Authorized to borrowing");
+	}
+	BookAvailability availability = bookClient.checkAvailability(existedLoan.getTitle());
+	System.out.println(availability);
+	if (!availability.canBorrow()) {
+		throw new RuntimeException("Book Not Available: " + availability.getCopiesAvailable() + "Copies Left");
+	}
+	existedLoan.setReturnredAt(LocalDateTime.now().plusDays(2));
+	existedLoan.setStatus(LoanStatus.RETURNED.name());
+	existedLoan.setTitle(existedLoan.getTitle());
+	Loan returned = loanRepository.save(existedLoan);
+	Integer copiesAvailable = availability.getCopiesAvailable() + 1;
+	bookClient.updateBookCopies(existedLoan.getTitle(), copiesAvailable);
+	return returned;
+}
+
+public List<Loan> findAll() {
+	List<Loan> all = loanRepository.findAll();
+	if (all.isEmpty()) {
+		throw new RuntimeException("No Loan in Databae");
+	}
+	return all;
+}
+
+public List<Loan> findByUserId(Long userId) {
+	List<Loan> allByUserId = loanRepository.findAllByUserId(userId);
+
+	if (allByUserId.isEmpty()) {
+		throw new RuntimeException("No Books borrowed by this User : " + userId);
+	}
+	return allByUserId;
+}
 }
