@@ -18,8 +18,8 @@ public class BookCopiesUpdateServiceImpl implements BookCopiesUpdateService {
 	private BookRepository bookRepository;
 
 	@Override
-	public Book updateTotalBookCopies(Long id, Integer newCopies) {
-		Book book = bookRepository.findById(id).orElseThrow(() -> new BookNotFoundException("Book not found"));
+	public Book updateTotalBookCopies(String title, Integer newCopies) {
+		Book book = bookRepository.findByTitle(title).orElseThrow(() -> new BookNotFoundException("Book not found"));
 		if (newCopies < book.getCopiesAvailable()) {
 			throw new BookNotAvailableException("Cannot Reduce Below AvailableCopies: " + book.getCopiesAvailable());
 		}
