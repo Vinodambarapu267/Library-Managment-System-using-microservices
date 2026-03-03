@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.UserDto;
 import com.example.demo.entity.LibraryUser;
+import com.example.demo.exception.UserAlreadyExistException;
+import com.example.demo.exception.UserNotFoundException;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.LibraryUserServie;
 import com.example.demo.utility.MemeberType;
@@ -29,7 +31,7 @@ public class LibraryUserServieImpl implements LibraryUserServie {
 			libraryUser.setRole(roleupdate(libraryUser.getRole()));
 			return userRepository.save(libraryUser);
 		} else {
-			throw new RuntimeException("User Already existed");
+			throw new UserAlreadyExistException("User Already existed");
 		}
 	}
 
@@ -37,15 +39,16 @@ public class LibraryUserServieImpl implements LibraryUserServie {
 	@Cacheable(value = "libraryusers", key = "#id")
 	public LibraryUser findById(Long id) {
 		LibraryUser user = userRepository.findById(id)
-				.orElseThrow(() -> new RuntimeException(" User Not Found Exception"));
+				.orElseThrow(() -> new UserNotFoundException(" User Not Found Exception"));
 
 		return user;
 	}
 
 	@Override
-	@CachePut(value = "libraryusers",key = "#id")
+	@CachePut(value = "libraryusers", key = "#id")
 	public LibraryUser updateUser(Long id, UserDto userDto) {
-		LibraryUser existedUser = userRepository.findById(id).orElseThrow(()-> new RuntimeException("User not Found"));
+		LibraryUser existedUser = userRepository.findById(id)
+				.orElseThrow(() -> new UserNotFoundException("User not Found"));
 		existedUser.setEmail(userDto.getEmail());
 		existedUser.setPassword(Base64.getEncoder().encodeToString(userDto.getPassword().getBytes()));
 		existedUser.setRole(roleupdate(userDto.getRole()));
@@ -55,19 +58,21 @@ public class LibraryUserServieImpl implements LibraryUserServie {
 	}
 
 	@Override
-	@Cacheable(value = "libraryusers",key = "'all'")
+	@Cacheable(value = "libraryusers", key = "'all'")
 	public List<LibraryUser> findAll() {
 		List<LibraryUser> all = userRepository.findAll();
 		if (all.isEmpty()) {
-			throw new RuntimeException("No User");
+			throw new UserNotFoundException("No User");
 		}
 		return all;
 	}
 
 	@Override
-	@CacheEvict(value = "libraryusers",key = "#id")
+	@CacheEvict(value = "libraryusers", key = "#id")
 	public void deleteById(Long id) {
-	userRepository.deleteById(id);
+		LibraryUser remove = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("user not Found"));
+
+		userRepository.deleteById(remove.getId());
 	}
 
 	private static String roleupdate(String role) {
@@ -97,5 +102,4 @@ public class LibraryUserServieImpl implements LibraryUserServie {
 		}
 	}
 
-	
 }
