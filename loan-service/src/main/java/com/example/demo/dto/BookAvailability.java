@@ -10,10 +10,11 @@ import lombok.NoArgsConstructor;
 public class BookAvailability {
 	private boolean isAvailable;
 	private Integer copiesAvailable;
+	private boolean canBorrow;
 
 	public void setCopies(int newCopies) {
 		this.copiesAvailable = newCopies;
-		this.isAvailable = newCopies > 0; // ✅ Auto-update availability
+		this.isAvailable = newCopies > 0; 
 	}
 
 	public boolean canBorrow() {

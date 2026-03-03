@@ -35,7 +35,7 @@ public class Book {
 	@PrePersist
 	@PreUpdate
 	public void validateCopies() {
-		if (copiesAvailable > totalCopies || copiesAvailable < 0) {
+		if (copiesAvailable >= totalCopies || copiesAvailable < 0) {
 			throw new IllegalStateException("Invalid copy counts");
 		}
 	}

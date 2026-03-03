@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 public class Loan {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long Loan;
+	private Long loanId;
 	private String title;
 	private Long userId;
 	private LocalDateTime borrowAt;
