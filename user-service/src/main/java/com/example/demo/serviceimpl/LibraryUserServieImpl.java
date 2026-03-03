@@ -11,6 +11,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.UserDto;
+import com.example.demo.dto.UserRoleStatus;
 import com.example.demo.entity.LibraryUser;
 import com.example.demo.exception.UserAlreadyExistException;
 import com.example.demo.exception.UserNotFoundException;
@@ -73,6 +74,21 @@ public class LibraryUserServieImpl implements LibraryUserServie {
 		LibraryUser remove = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("user not Found"));
 
 		userRepository.deleteById(remove.getId());
+	}
+
+	@Override
+	public UserRoleStatus checkRoleStatus(Long id) {
+		LibraryUser user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User Not Found"));
+		boolean canBorrow = switch (user.getRole()) {
+		case "STUDENT", "FACULTY", "STAFF" -> true;
+		case "GUEST", "INACTIVE" -> false;
+		default -> false;
+		};
+		UserRoleStatus roleStatus = new UserRoleStatus();
+		roleStatus.setRole(user.getRole());
+		roleStatus.setActive(user.isActive());
+		roleStatus.setCanBorrow(canBorrow);
+		return roleStatus;
 	}
 
 	private static String roleupdate(String role) {

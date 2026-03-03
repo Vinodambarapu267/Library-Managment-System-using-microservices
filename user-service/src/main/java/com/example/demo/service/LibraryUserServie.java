@@ -3,6 +3,7 @@ package com.example.demo.service;
 import java.util.List;
 
 import com.example.demo.dto.UserDto;
+import com.example.demo.dto.UserRoleStatus;
 import com.example.demo.entity.LibraryUser;
 
 public interface LibraryUserServie {
@@ -15,4 +16,6 @@ public interface LibraryUserServie {
 	public List<LibraryUser> findAll();
 
 	public void deleteById(Long id);
+
+	public UserRoleStatus checkRoleStatus(Long id);
 }

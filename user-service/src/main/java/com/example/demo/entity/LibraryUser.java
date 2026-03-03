@@ -22,4 +22,5 @@ public class LibraryUser {
 	private String email;
 	private String password;
 	private String role;
+	private boolean isActive = true;
 }

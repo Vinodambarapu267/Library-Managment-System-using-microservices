@@ -15,15 +15,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.UserDto;
+import com.example.demo.dto.UserRoleStatus;
 import com.example.demo.entity.LibraryUser;
 import com.example.demo.service.LibraryUserServie;
 
 import jakarta.websocket.server.PathParam;
+import jakarta.ws.rs.Path;
 
 @RestController
 @RequestMapping("/api/users")
 public class LibraryUserController {
-
 
 	@Autowired
 	private LibraryUserServie libraryUserServie;
@@ -39,19 +40,29 @@ public class LibraryUserController {
 		LibraryUser byId = libraryUserServie.findById(id);
 		return ResponseEntity.ok(byId);
 	}
+
 	@GetMapping()
-	public ResponseEntity<?> findAll(){
+	public ResponseEntity<?> findAll() {
 		List<LibraryUser> all = libraryUserServie.findAll();
 		return ResponseEntity.ok(all);
 	}
+
 	@PutMapping("/updateUser/id")
-	public ResponseEntity<?> updateByuser(@RequestParam Long id,@RequestBody UserDto dto){
+	public ResponseEntity<?> updateByuser(@RequestParam Long id, @RequestBody UserDto dto) {
 		LibraryUser updateUser = libraryUserServie.updateUser(id, dto);
 		return ResponseEntity.ok(updateUser);
 	}
+
 	@DeleteMapping("/deletebyid/{id}")
-	public ResponseEntity<?> deleteById(@PathParam(value = "id") Long id){
+	public ResponseEntity<?> deleteById(@PathParam(value = "id") Long id) {
 		libraryUserServie.deleteById(id);
 		return ResponseEntity.ok("deleted successfully");
+	}
+
+	@GetMapping("/{id}/checkstatus")
+	public ResponseEntity<?> checkStatus(@PathVariable Long id) {
+		UserRoleStatus checkRoleStatus = libraryUserServie.checkRoleStatus(id);
+		return ResponseEntity.ok(checkRoleStatus);
+
 	}
 }
