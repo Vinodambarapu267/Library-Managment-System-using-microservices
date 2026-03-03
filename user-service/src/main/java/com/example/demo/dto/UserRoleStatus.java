@@ -10,5 +10,5 @@ import lombok.NoArgsConstructor;
 public class UserRoleStatus {
 	private String role;
 	private boolean isActive;
-	private boolean canBorrow;
+	private boolean allowToBorrow;
 }

@@ -22,8 +22,7 @@ import com.example.demo.service.LibraryUserServie;
 import com.example.demo.utility.ResponseMessage;
 import com.example.demo.utility.ResponseStatus;
 
-import jakarta.websocket.server.PathParam;
-import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 
 @RestController
 @RequestMapping("/api/users")

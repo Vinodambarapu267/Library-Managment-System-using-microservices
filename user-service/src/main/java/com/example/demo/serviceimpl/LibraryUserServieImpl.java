@@ -87,7 +87,7 @@ public class LibraryUserServieImpl implements LibraryUserServie {
 		UserRoleStatus roleStatus = new UserRoleStatus();
 		roleStatus.setRole(user.getRole());
 		roleStatus.setActive(user.isActive());
-		roleStatus.setCanBorrow(canBorrow);
+		roleStatus.setAllowToBorrow(canBorrow);
 		return roleStatus;
 	}
 
