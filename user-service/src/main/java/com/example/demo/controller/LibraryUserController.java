@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import java.net.HttpURLConnection;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,8 @@ import com.example.demo.dto.UserDto;
 import com.example.demo.dto.UserRoleStatus;
 import com.example.demo.entity.LibraryUser;
 import com.example.demo.service.LibraryUserServie;
+import com.example.demo.utility.ResponseMessage;
+import com.example.demo.utility.ResponseStatus;
 
 import jakarta.websocket.server.PathParam;
 import jakarta.ws.rs.Path;
@@ -32,31 +35,54 @@ public class LibraryUserController {
 	@PostMapping("/register")
 	public ResponseEntity<?> registerLibrary(@RequestBody LibraryUser libraryUser) {
 		LibraryUser register = libraryUserServie.register(libraryUser);
-		return ResponseEntity.ok(register);
+		if (register != null) {
+			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
+					"Created Successfully", register));
+		} else {
+			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_INTERNAL_ERROR,
+					ResponseStatus.FAILURE.name(), "Created failed.."));
+
+		}
 	}
 
 	@GetMapping("/getbyid/{id}")
 	public ResponseEntity<?> findById(@PathVariable Long id) {
 		LibraryUser byId = libraryUserServie.findById(id);
+
 		return ResponseEntity.ok(byId);
 	}
 
 	@GetMapping()
 	public ResponseEntity<?> findAll() {
 		List<LibraryUser> all = libraryUserServie.findAll();
-		return ResponseEntity.ok(all);
+		if (all != null) {
+			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
+					"Created Successfully", all));
+		} else {
+			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_INTERNAL_ERROR,
+					ResponseStatus.FAILURE.name(), "Created failed.."));
+
+		}
 	}
 
 	@PutMapping("/updateUser/id")
 	public ResponseEntity<?> updateByuser(@RequestParam Long id, @RequestBody UserDto dto) {
 		LibraryUser updateUser = libraryUserServie.updateUser(id, dto);
-		return ResponseEntity.ok(updateUser);
+		if (updateUser != null) {
+			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
+					"Created Successfully", updateUser));
+		} else {
+			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_INTERNAL_ERROR,
+					ResponseStatus.FAILURE.name(), "Created failed.."));
+
+		}
 	}
 
 	@DeleteMapping("/deletebyid/{id}")
 	public ResponseEntity<?> deleteById(@PathParam(value = "id") Long id) {
 		libraryUserServie.deleteById(id);
-		return ResponseEntity.ok("deleted successfully");
+		return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_INTERNAL_ERROR,
+				ResponseStatus.FAILURE.name(), "Created failed.."));
 	}
 
 	@GetMapping("/{id}/checkstatus")
