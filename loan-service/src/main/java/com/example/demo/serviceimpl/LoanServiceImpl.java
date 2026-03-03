@@ -9,6 +9,11 @@ import org.springframework.stereotype.Service;
 import com.example.demo.dto.BorrowRequest;
 import com.example.demo.dto.UserRoleStatus;
 import com.example.demo.entity.Loan;
+import com.example.demo.exceptions.BookAlreadyReturnedException;
+import com.example.demo.exceptions.BookCopiesNotAvailableException;
+import com.example.demo.exceptions.BorrowBooksNotFoundException;
+import com.example.demo.exceptions.LoanNotFoundException;
+import com.example.demo.exceptions.UserNotAuthorizedException;
 import com.example.demo.feignClient.BookClient;
 import com.example.demo.feignClient.UserClient;
 import com.example.demo.repository.LoanRepository;
@@ -31,18 +36,18 @@ public class LoanServiceImpl {
 				LoanStatus.BORROWED.name());
 		for (Loan existedloan : availableLoans) {
 			if (existedloan.getTitle().equals(existedloan.getTitle())) {
-				throw new RuntimeException("First Return borrowed Book");
+				throw new BookAlreadyReturnedException("First Return borrowed Book");
 			}
 		}
 		UserRoleStatus checkStatus = userClient.checkStatus(borrowRequest.getUserId());
 
 		if (!checkStatus.isAllowToBorrow()) {
-			throw new RuntimeException("User not Authorized to borrowing");
+			throw new UserNotAuthorizedException("User not Authorized to borrowing");
 		}
 		Integer copiesAvailable = bookClient.checkAvailability(borrowRequest.getTitle());
 
 		if (copiesAvailable <= 1) {
-			throw new RuntimeException("Book Not Available: Only " + copiesAvailable + " copy left");
+			throw new BookCopiesNotAvailableException("Book Not Available: Only " + copiesAvailable + " copy left");
 		}
 		Loan loan = new Loan();
 		loan.setTitle(borrowRequest.getTitle());
@@ -57,9 +62,9 @@ public class LoanServiceImpl {
 	}
 
 	public Loan returnBook(Long loanId) {
-		Loan existedLoan = loanRepository.findById(loanId).orElseThrow(() -> new RuntimeException("Loan not found"));
+		Loan existedLoan = loanRepository.findById(loanId).orElseThrow(() -> new LoanNotFoundException("Loan not found"));
 		if (existedLoan.getStatus().equals(LoanStatus.RETURNED.name())) {
-			throw new RuntimeException(" Already Returned the book : " + existedLoan.getTitle());
+			throw new BookAlreadyReturnedException(" Already Returned the book : " + existedLoan.getTitle());
 		}
 
 		Integer copiesAvailable = bookClient.checkAvailability(existedLoan.getTitle());
@@ -78,7 +83,7 @@ public class LoanServiceImpl {
 	public List<Loan> findAll() {
 		List<Loan> all = loanRepository.findAll();
 		if (all.isEmpty()) {
-			throw new RuntimeException("No Loan in Databae");
+			throw new LoanNotFoundException("No Loan in Databae");
 		}
 		return all;
 	}
@@ -87,7 +92,7 @@ public class LoanServiceImpl {
 		List<Loan> allByUserId = loanRepository.findAllByUserId(userId);
 
 		if (allByUserId.isEmpty()) {
-			throw new RuntimeException("No Books borrowed by this User : " + userId);
+			throw new BorrowBooksNotFoundException("No Books borrowed by this User : " + userId);
 		}
 		return allByUserId;
 	}
