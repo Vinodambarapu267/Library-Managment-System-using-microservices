@@ -18,13 +18,14 @@ import com.example.demo.exceptions.UserNotAuthorizedException;
 import com.example.demo.feignClient.BookClient;
 import com.example.demo.feignClient.UserClient;
 import com.example.demo.repository.LoanRepository;
+import com.example.demo.service.LoanService;
 import com.example.demo.utility.LoanStatus;
 
 import jakarta.transaction.Transactional;
 
 @Service
 @Transactional
-public class LoanServiceImpl {
+public class LoanServiceImpl implements LoanService {
 
 	@Autowired
 	private LoanRepository loanRepository;

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.BorrowRequest;
 import com.example.demo.entity.Loan;
-import com.example.demo.serviceimpl.LoanServiceImpl;
+import com.example.demo.service.LoanService;
 import com.example.demo.utility.ResponseMessage;
 import com.example.demo.utility.ResponseStatus;
 
@@ -23,11 +23,11 @@ import com.example.demo.utility.ResponseStatus;
 @RequestMapping("/api/loan")
 public class LoanController {
 	@Autowired
-	private LoanServiceImpl loanServiceImpl;
+	private LoanService loanService;
 
 	@PostMapping("/borrowbook")
 	public ResponseEntity<?> borrowBook(@RequestBody BorrowRequest borrowRequest) {
-		Loan borrowBook = loanServiceImpl.borrowBook(borrowRequest);
+		Loan borrowBook = loanService.borrowBook(borrowRequest);
 		if (borrowBook != null) {
 			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
 					" book Borrow Successfully", borrowBook));
@@ -39,7 +39,7 @@ public class LoanController {
 
 	@PutMapping("/returnbook/{loanId}")
 	public ResponseEntity<?> returnBook(@PathVariable Long loanId) {
-		Loan returnBook = loanServiceImpl.returnBook(loanId);
+		Loan returnBook = loanService.returnBook(loanId);
 		if (returnBook != null) {
 			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
 					"returned SuccessFully", returnBook));
@@ -51,7 +51,7 @@ public class LoanController {
 
 	@GetMapping("/{userId}/Loans")
 	public ResponseEntity<?> findAllById(@PathVariable Long userId) {
-		List<Loan> byUserId = loanServiceImpl.findByUserId(userId);
+		List<Loan> byUserId = loanService.findByUserId(userId);
 
 		return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
 				"Borrowed Books under this User ID : " + userId, byUserId));
@@ -59,7 +59,7 @@ public class LoanController {
 
 	@GetMapping
 	public ResponseEntity<?> findAll() {
-		List<Loan> all = loanServiceImpl.findAll();
+		List<Loan> all = loanService.findAll();
 
 		return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
 				"Retrived All Loans ", all));
