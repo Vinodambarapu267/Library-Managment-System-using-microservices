@@ -54,6 +54,12 @@ public class GlobalExceptionHandler {
 				exception.getLocalizedMessage(), request.getDescription(false));
 		return ResponseEntity.ok(errorMessage);
 	}
+	@ExceptionHandler(BookNotFoundException.class)
+	public ResponseEntity<?> handleBookNotFound(BookNotFoundException exception, WebRequest request) {
+		ErrorMessage errorMessage = new ErrorMessage(LocalDateTime.now(), HttpURLConnection.HTTP_FORBIDDEN,
+				exception.getLocalizedMessage(), request.getDescription(false));
+		return ResponseEntity.ok(errorMessage);
+	}
 	 @ExceptionHandler(RuntimeException.class)
 	    public ResponseEntity<ErrorMessage> handleGeneric(RuntimeException ex, WebRequest request) {
 		 return ResponseEntity.ok(new ErrorMessage(LocalDateTime.now(), HttpURLConnection.HTTP_INTERNAL_ERROR, ex.getMessage(), request.getDescription(false)));

@@ -1,6 +1,7 @@
 package com.example.demo.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -11,4 +12,7 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
 
 	List<Loan> findAllByUserIdAndStatus(Long userId, String status);
 
+	Optional<Loan> findByUserId(Long userId);
+
+	Optional<Loan> findByTitle(String title);
 }

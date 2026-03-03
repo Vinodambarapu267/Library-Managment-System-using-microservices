@@ -11,6 +11,7 @@ import com.example.demo.dto.UserRoleStatus;
 import com.example.demo.entity.Loan;
 import com.example.demo.exceptions.BookAlreadyReturnedException;
 import com.example.demo.exceptions.BookCopiesNotAvailableException;
+import com.example.demo.exceptions.BookNotReturnedException;
 import com.example.demo.exceptions.BorrowBooksNotFoundException;
 import com.example.demo.exceptions.LoanNotFoundException;
 import com.example.demo.exceptions.UserNotAuthorizedException;
@@ -24,6 +25,7 @@ import jakarta.transaction.Transactional;
 @Service
 @Transactional
 public class LoanServiceImpl {
+
 	@Autowired
 	private LoanRepository loanRepository;
 	@Autowired
@@ -32,11 +34,12 @@ public class LoanServiceImpl {
 	private UserClient userClient;
 
 	public Loan borrowBook(BorrowRequest borrowRequest) {
+
 		List<Loan> availableLoans = loanRepository.findAllByUserIdAndStatus(borrowRequest.getUserId(),
 				LoanStatus.BORROWED.name());
 		for (Loan existedloan : availableLoans) {
 			if (existedloan.getTitle().equals(existedloan.getTitle())) {
-				throw new BookAlreadyReturnedException("First Return borrowed Book");
+				throw new BookNotReturnedException("First return borrowed Book : " + existedloan.getTitle());
 			}
 		}
 		UserRoleStatus checkStatus = userClient.checkStatus(borrowRequest.getUserId());
@@ -62,7 +65,8 @@ public class LoanServiceImpl {
 	}
 
 	public Loan returnBook(Long loanId) {
-		Loan existedLoan = loanRepository.findById(loanId).orElseThrow(() -> new LoanNotFoundException("Loan not found"));
+		Loan existedLoan = loanRepository.findById(loanId)
+				.orElseThrow(() -> new LoanNotFoundException("Loan not found"));
 		if (existedLoan.getStatus().equals(LoanStatus.RETURNED.name())) {
 			throw new BookAlreadyReturnedException(" Already Returned the book : " + existedLoan.getTitle());
 		}
@@ -89,7 +93,10 @@ public class LoanServiceImpl {
 	}
 
 	public List<Loan> findByUserId(Long userId) {
-		List<Loan> allByUserId = loanRepository.findAllByUserId(userId);
+		Loan user = loanRepository.findByUserId(userId)
+				.orElseThrow(() -> new UserNotAuthorizedException("User Not Found"));
+
+		List<Loan> allByUserId = loanRepository.findAllByUserId(user.getUserId());
 
 		if (allByUserId.isEmpty()) {
 			throw new BorrowBooksNotFoundException("No Books borrowed by this User : " + userId);

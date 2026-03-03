@@ -30,7 +30,7 @@ public class LoanController {
 		Loan borrowBook = loanServiceImpl.borrowBook(borrowRequest);
 		if (borrowBook != null) {
 			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
-					" book Borrow SuccessFully", borrowBook));
+					" book Borrow Successfully", borrowBook));
 		} else {
 			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_INTERNAL_ERROR,
 					ResponseStatus.FAILURE.name(), "book Borrow is Failed"));
