@@ -24,7 +24,7 @@ import com.example.demo.utility.ResponseMessage;
 import com.example.demo.utility.ResponseStatus;
 
 @RestController
-@RequestMapping("/api/v1/books")
+@RequestMapping("/api/books")
 public class BookController {
 
 	@Autowired
