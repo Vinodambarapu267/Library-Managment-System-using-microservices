@@ -5,11 +5,12 @@ import java.util.List;
 import com.example.demo.entity.Fine;
 
 public interface FineService {
-	public Fine createFineForLoan(Fine fine);
+	public Fine createFineForLoan(Long loanId);
 
 	public List<Fine> getAllFines();
 
-	public List<Fine> getAllPendingFine(String pending);
+	public List<Fine> getAllPendingFine();
 
-	public Double calculateFineAmount(int daysOverDue, Double principal);
+	public void processDailyFines();
+
 }
