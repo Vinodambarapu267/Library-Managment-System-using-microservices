@@ -1,0 +1,224 @@
+================================================================================
+                       LIBRARY MANAGEMENT API DOCUMENTATION
+================================================================================
+
+--------------------------------------------------------------------------------
+ 1. BOOK SERVICE                                              [ PORT : 9091 ]
+    Base URL : http://localhost:9091/api/books
+--------------------------------------------------------------------------------
+
+  CORE ENDPOINTS
+  ~~~~~~~~~~~~~~
+
+  #1  ADD BOOK
+      Method : POST
+      URL    : http://localhost:9091/api/books/addbook
+      Body   : {
+                   "id"               : 1,
+                   "isbn"             : "9780134685991",
+                   "title"            : "Spring Microservices in Action",
+                   "author"           : "John Carnell",
+                   "copiesAvailable"  : 3,
+                   "totalCopies"      : 5,
+                   "category"         : "Technology",
+                   "publishedYear"    : 2020,
+                   "bookStatus"       : "AVAILABLE"
+               }
+
+  ............................................................................
+
+  #2  UPDATE BOOK
+      Method : PUT
+      URL    : http://localhost:9091/api/books/updatebook/{id}
+      Body   : {
+                   "isbn"             : "9780134685991",
+                   "title"            : "Spring Microservices in Action",
+                   "author"           : "John Carnell",
+                   "copiesAvailable"  : 3,
+                   "totalCopies"      : 5,
+                   "category"         : "Technology",
+                   "publishedYear"    : 2020,
+                   "bookStatus"       : "AVAILABLE"
+               }
+
+  ............................................................................
+
+  #3  GET BY ISBN
+      Method : GET
+      URL    : http://localhost:9091/api/books/getbyisbn
+      Param  : @RequestParam String isbn
+
+  ............................................................................
+
+  #4  FIND ALL BOOKS
+      Method : GET
+      URL    : http://localhost:9091/api/books
+
+  ............................................................................
+
+  #5  FIND BY AUTHOR
+      Method : GET
+      URL    : http://localhost:9091/api/books/findbyauthor/{author}
+      Param  : @PathVariable String author
+
+  ............................................................................
+
+  #6  TOTAL BOOK COUNT
+      Method : GET
+      URL    : http://localhost:9091/api/books/totalbooks
+
+  ............................................................................
+
+  #7  DELETE BY ISBN
+      Method : DELETE
+      URL    : http://localhost:9091/api/books/deletebook/{isbn}
+
+  INVENTORY MANAGEMENT
+  ~~~~~~~~~~~~~~~~~~~~
+
+  #8  UPDATE TOTAL COPIES
+      Method : PATCH
+      URL    : http://localhost:9091/api/books/{title}/copies/{newCopies}
+      Params : @PathVariable("title") String title
+               @PathVariable("newCopies") int newCopies
+
+  ............................................................................
+
+  #9  ISSUE BOOK
+      Method : PATCH
+      URL    : http://localhost:9091/api/books/{title}/issue
+      Param  : @PathVariable String title
+
+  ............................................................................
+
+  #10 RETURN BOOK
+      Method : PATCH
+      URL    : http://localhost:9091/api/books/{title}/return
+      Param  : @PathVariable String title
+
+  ............................................................................
+
+  #11 CHECK AVAILABILITY BY TITLE
+      Method : GET
+      URL    : http://localhost:9091/api/books/{title}/availability
+      Param  : @PathVariable String title
+
+
+--------------------------------------------------------------------------------
+ 2. USER SERVICE                                              [ PORT : 9091 ]
+    Base URL : http://localhost:9091/api/users
+--------------------------------------------------------------------------------
+
+  #1  REGISTER USER
+      Method : POST
+      URL    : http://localhost:9091/api/users/register
+      Param  : @RequestBody LibraryUser libraryUser
+      Body   : {
+                   "userName"  : "john_doe",
+                   "email"     : "john.doe@library.com",
+                   "password"  : "encodedPass123",
+                   "role"      : "STUDENT"
+               }
+
+  ............................................................................
+
+  #2  UPDATE USER
+      Method : PUT
+      URL    : http://localhost:9091/api/users/updateUser/{id}
+      Params : @RequestParam Long id
+               @RequestBody UserDto dto
+      Body   : {
+                   "userName"  : "john_doe",
+                   "email"     : "john.doe@library.com",
+                   "password"  : "securePass123",
+                   "role"      : "STUDENT"
+               }
+
+  ............................................................................
+
+  #3  FIND BY ID
+      Method : GET
+      URL    : http://localhost:9091/api/users/getbyid/{id}
+      Param  : @PathVariable Long id
+
+  ............................................................................
+
+  #4  FIND ALL USERS
+      Method : GET
+      URL    : http://localhost:9091/api/users
+
+  ............................................................................
+
+  #5  CHECK ROLE STATUS
+      Method : GET
+      URL    : http://localhost:9091/api/users/{id}/checkstatus
+      Param  : @PathVariable Long id
+
+  ............................................................................
+
+  #6  DELETE BY ID
+      Method : DELETE
+      URL    : http://localhost:9091/api/users/deletebyid/{id}
+      Param  : @PathParam(value = "id") Long id
+
+
+--------------------------------------------------------------------------------
+ 3. LOAN SERVICE                                              [ PORT : 9092 ]
+    Base URL : http://localhost:9092/api/loan
+--------------------------------------------------------------------------------
+
+  #1  BORROW BOOK
+      Method : POST
+      URL    : http://localhost:9092/api/loan/borrowbook
+      Body   : {
+                   "title"   : "Spring Microservices in Action",
+                   "userId"  : 1
+               }
+
+  ............................................................................
+
+  #2  RETURN BOOK
+      Method : PUT
+      URL    : http://localhost:9092/api/loan/returnbook/{loanId}
+      Param  : @PathVariable Long loanId
+
+  ............................................................................
+
+  #3  FIND LOANS BY USER ID
+      Method : GET
+      URL    : http://localhost:9092/api/loan/{userId}/Loans
+      Param  : @PathVariable Long userId
+
+  ............................................................................
+
+  #4  TOTAL LOANS
+      Method : GET
+      URL    : http://localhost:9092/api/loan
+
+
+--------------------------------------------------------------------------------
+ 4. FINE SERVICE                                              [ PORT : 9093 ]
+    Base URL : http://localhost:9092/api/fines
+--------------------------------------------------------------------------------
+
+  #1  INSERT FINE
+      Method : POST
+      URL    : http://localhost:9092/api/fines/createfine
+      Param  : @RequestParam Long loanId
+
+  ............................................................................
+
+  #2  GET TOTAL FINES
+      Method : GET
+      URL    : http://localhost:9092/api/fines
+
+  ............................................................................
+
+  #3  GET ALL PENDING FINES
+      Method : GET
+      URL    : http://localhost:9092/api/fines/getallpendingfines
+
+
+================================================================================
+  4 Services  |  24 Endpoints  |  Ports: 9091, 9092, 9093
+================================================================================
