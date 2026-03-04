@@ -27,7 +27,7 @@ This system is composed of **four independent microservices**, each with its own
                │
                ▼
    ┌───────────────────────┐
-   │     API Gateway       │  :8080
+   │     API Gateway       │  :8090
    └─────────────┬─────────┘
                  │
   ┌──────────────┼──────────────────┐
@@ -51,7 +51,7 @@ Distributed traces are captured by **Zipkin** at `localhost:9411`.
 |-------------------|-------------------------------------------------------------|-------|
 | **Eureka Server** | Service registry & discovery                                | 8761  |
 | **API Gateway**   | Single entry point, routes all external requests            | 8090  |
-| **Book-Catalog**  | Manages book metadata & inventory (MongoDB)                 | 9090  |
+| **Book-Catalog**  | Manages book metadata & inventory (MySQL)                   | 9091  |
 | **User-Service**  | User registration, roles, JWT authentication (MySQL)        | 9091  |
 | **Loan-Service**  | Borrow / return orchestration (MySQL)                       | 9092  |
 | **Fine-Service**  | Overdue fine calculation via scheduled job (MySQL)          | 9093  |
@@ -62,54 +62,71 @@ Distributed traces are captured by **Zipkin** at `localhost:9411`.
 ## 🔧 Services
 
 ### 📖 1. Book-Catalog Service
-> **Database**: MySQL — flexible schema for book metadata
+> **Base URL**: `http://localhost:9091/api/books` · **Database**: MySQL
 
 | Field             | Type     | Description                        |
 |-------------------|----------|------------------------------------|
-| `isbn`            | String   | Primary key                        |
+| `id`              | Long     | Primary key                        |
+| `isbn`            | String   | Unique book identifier             |
 | `title`           | String   | Book title                         |
 | `author`          | String   | Author name                        |
-| `categories`      | List     | Genre / topic tags                 |
+| `category`        | String   | Genre / topic tag                  |
 | `copiesAvailable` | Integer  | Real-time availability count       |
+| `totalCopies`     | Integer  | Total copies in library            |
+| `publishedYear`   | Integer  | Year of publication                |
+| `bookStatus`      | Enum     | `AVAILABLE` or `UNAVAILABLE`       |
 
 **Endpoints:**
 
-| Method | Path                        | Description                      |
-|--------|-----------------------------|----------------------------------|
-| `POST` | `/books`                    | Add a new book                   |
-| `GET`  | `/books/{isbn}`             | Retrieve book details            |
-| `GET`  | `/books/search?title=xyz`   | Search books by title            |
-| `GET`  | `/books/{isbn}/available`   | *(Internal)* Check availability  |
+| Method   | Path                              | Description                        |
+|----------|-----------------------------------|------------------------------------|
+| `POST`   | `/api/books/addbook`              | Add a new book                     |
+| `PUT`    | `/api/books/updatebook/{id}`      | Update book details                |
+| `GET`    | `/api/books/getbyisbn?isbn=`      | Retrieve book by ISBN              |
+| `GET`    | `/api/books`                      | List all books                     |
+| `GET`    | `/api/books/findbyauthor/{author}`| Find books by author               |
+| `GET`    | `/api/books/totalbooks`           | Get total book count               |
+| `DELETE` | `/api/books/deletebook/{isbn}`    | Delete a book by ISBN              |
+| `PATCH`  | `/api/books/{title}/copies/{n}`   | Update total copies for a book     |
+| `PATCH`  | `/api/books/{title}/issue`        | Issue a book (decrement available) |
+| `PATCH`  | `/api/books/{title}/return`       | Return a book (increment available)|
+| `GET`    | `/api/books/{title}/availability` | Check availability by title        |
 
 ---
 
 ### 👤 2. User-Service
-> **Database**: MySQL — ACID-compliant user accounts
+> **Base URL**: `http://localhost:9091/api/users` · **Database**: MySQL
 
-| Field   | Type   | Description                    |
-|---------|--------|--------------------------------|
-| `id`    | Long   | Auto-generated primary key     |
-| `email` | String | Unique user email              |
-| `role`  | Enum   | `MEMBER` or `LIBRARIAN`        |
+| Field      | Type   | Description                    |
+|------------|--------|--------------------------------|
+| `id`       | Long   | Auto-generated primary key     |
+| `userName` | String | Unique username                |
+| `email`    | String | Unique user email              |
+| `password` | String | Encoded password               |
+| `role`     | Enum   | `STUDENT` or `LIBRARIAN`       |
 
 **Endpoints:**
 
-| Method | Path                  | Description                          |
-|--------|-----------------------|--------------------------------------|
-| `POST` | `/users/register`     | Register a new user                  |
-| `GET`  | `/users/{id}/isMember`| *(Internal)* Check active membership |
+| Method   | Path                               | Description                   |
+|----------|------------------------------------|-------------------------------|
+| `POST`   | `/api/users/register`              | Register a new user           |
+| `PUT`    | `/api/users/updateUser/{id}`       | Update user details           |
+| `GET`    | `/api/users/getbyid/{id}`          | Find user by ID               |
+| `GET`    | `/api/users`                       | List all users                |
+| `GET`    | `/api/users/{id}/checkstatus`      | Check user role/status        |
+| `DELETE` | `/api/users/deletebyid/{id}`       | Delete user by ID             |
 
 > 🔐 JWT authentication is integrated — tokens are issued and validated per request.
 
 ---
 
 ### 🔄 3. Loan-Service
-> **Database**: MySQL — transactional integrity for borrow/return operations
+> **Base URL**: `http://localhost:9092/api/loan` · **Database**: MySQL
 
 | Field        | Type      | Description                        |
 |--------------|-----------|------------------------------------|
 | `id`         | Long      | Primary key                        |
-| `isbn`       | String    | Book being borrowed                |
+| `title`      | String    | Title of book being borrowed       |
 | `userId`     | Long      | Borrowing user                     |
 | `borrowedAt` | LocalDate | Loan start date                    |
 | `dueDate`    | LocalDate | Expected return date               |
@@ -118,10 +135,12 @@ Distributed traces are captured by **Zipkin** at `localhost:9411`.
 
 **Endpoints:**
 
-| Method  | Path               | Description                         |
-|---------|--------------------|-------------------------------------|
-| `POST`  | `/loans/borrow`    | Borrow a book                       |
-| `PUT`   | `/loans/{id}/return` | Return a book                     |
+| Method | Path                          | Description                     |
+|--------|-------------------------------|---------------------------------|
+| `POST` | `/api/loan/borrowbook`        | Borrow a book                   |
+| `PUT`  | `/api/loan/returnbook/{loanId}` | Return a book by loan ID      |
+| `GET`  | `/api/loan/{userId}/Loans`    | Get all loans for a user        |
+| `GET`  | `/api/loan`                   | Get total loans count           |
 
 **Before creating a loan, the service:**
 1. ✅ Validates book availability via `book-catalog` Feign client
@@ -131,14 +150,22 @@ Distributed traces are captured by **Zipkin** at `localhost:9411`.
 ---
 
 ### 💰 4. Fine-Service
-> **Database**: MySQL — tracks overdue fines
+> **Base URL**: `http://localhost:9092/api/fines` · **Database**: MySQL (Port: 9093)
 
-| Field         | Type      | Description                     |
-|---------------|-----------|---------------------------------|
-| `loanId`      | Long      | Reference to the overdue loan   |
-| `amount`      | BigDecimal| Calculated fine amount          |
-| `overdueSince`| LocalDate | When the loan became overdue    |
-| `status`      | Enum      | `PENDING` or `PAID`             |
+| Field         | Type       | Description                     |
+|---------------|------------|---------------------------------|
+| `loanId`      | Long       | Reference to the overdue loan   |
+| `amount`      | BigDecimal | Calculated fine amount          |
+| `overdueSince`| LocalDate  | When the loan became overdue    |
+| `status`      | Enum       | `PENDING` or `PAID`             |
+
+**Endpoints:**
+
+| Method | Path                               | Description                  |
+|--------|------------------------------------|------------------------------|
+| `POST` | `/api/fines/createfine?loanId=`    | Create a fine for a loan     |
+| `GET`  | `/api/fines`                       | Get all fines                |
+| `GET`  | `/api/fines/getallpendingfines`    | Get all pending fines        |
 
 **Background Processing:**
 - A `@Scheduled` cron job runs **daily**, scanning all active overdue loans
@@ -174,7 +201,7 @@ View traces at: `http://localhost:9411`
 | Language          | Java 17+                                         |
 | Framework         | Spring Boot 3+                                   |
 | Cloud             | Spring Cloud (Eureka, Gateway, OpenFeign, Sleuth)|
-| Databases         | MySQL (Book-Catalog), MySQL (User, Loan, Fine)   |
+| Databases         | MySQL (Book-Catalog, User, Loan, Fine)           |
 | Build Tool        | Maven (multi-module project)                     |
 | Security          | JWT Authentication                               |
 | Testing           | JUnit 5, Mockito                                 |
@@ -201,9 +228,9 @@ View traces at: `http://localhost:9411`
 # Zipkin — distributed tracing UI
 docker run -d -p 9411:9411 openzipkin/zipkin
 
-# MySQL — for User, Loan, Fine services
+# MySQL — for Book-Catalog, User, Loan, Fine services
 docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root mysql:8
-
+```
 
 > **Alternative:** Run Zipkin directly from its JAR:
 > ```bash
@@ -250,7 +277,7 @@ cd api-gateway
 mvn spring-boot:run
 ```
 
-> Gateway listens on: `http://localhost:8080`
+> Gateway listens on: `http://localhost:8090`
 
 ---
 
@@ -269,19 +296,19 @@ mvn spring-boot:run
 ### End-to-End Borrow Flow
 
 ```bash
-curl -X POST http://localhost:8090/loans/borrow \
+curl -X POST http://localhost:8090/api/loan/borrowbook \
   -H "Content-Type: application/json" \
-  -d '{"isbn": "1234567890", "userId": "1"}'
+  -d '{"title": "Spring Microservices in Action", "userId": 1}'
 ```
 
 **What happens behind the scenes:**
 
 ```
-1. Client ──────────────────────► API Gateway (:8080)
-2. Gateway ─────────────────────► Loan-Service
-3. Loan-Service ────────────────► Book-service  (is book available?)
+1. Client ──────────────────────► API Gateway (:8090)
+2. Gateway ─────────────────────► Loan-Service (:9092)
+3. Loan-Service ────────────────► Book-Catalog  (is book available?)
 4. Loan-Service ────────────────► User-Service  (is user an active member?)
-5. Loan-Service ────────────────► Book-service  (decrement copiesAvailable)
+5. Loan-Service ────────────────► Book-Catalog  (issue book / decrement copiesAvailable)
 6. Loan-Service ─── creates Loan record in MySQL
 7. Zipkin ─────── captures full trace across all hops
 ```
