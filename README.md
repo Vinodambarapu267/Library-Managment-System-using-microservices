@@ -27,7 +27,7 @@ This system is composed of **four independent microservices**, each with its own
                │
                ▼
    ┌───────────────────────┐
-   │     API Gateway       │  :8090
+   │      API Gateway      │  :9095
    └─────────────┬─────────┘
                  │
   ┌──────────────┼──────────────────┐
@@ -50,8 +50,8 @@ Distributed traces are captured by **Zipkin** at `localhost:9411`.
 | Component         | Role                                                        | Port  |
 |-------------------|-------------------------------------------------------------|-------|
 | **Eureka Server** | Service registry & discovery                                | 8761  |
-| **API Gateway**   | Single entry point, routes all external requests            | 8090  |
-| **Book-Catalog**  | Manages book metadata & inventory (MySQL)                   | 9091  |
+| **API Gateway**   | Single entry point, routes all external requests            | 9095  |
+| **Book-Service**  | Manages book metadata & inventory (MySQL)                   | 9090  |
 | **User-Service**  | User registration, roles, JWT authentication (MySQL)        | 9091  |
 | **Loan-Service**  | Borrow / return orchestration (MySQL)                       | 9092  |
 | **Fine-Service**  | Overdue fine calculation via scheduled job (MySQL)          | 9093  |
@@ -62,7 +62,7 @@ Distributed traces are captured by **Zipkin** at `localhost:9411`.
 ## 🔧 Services
 
 ### 📖 1. Book-Catalog Service
-> **Base URL**: `http://localhost:9091/api/books` · **Database**: MySQL
+> **Base URL**: `http://localhost:9090/api/books` · **Database**: MySQL
 
 | Field             | Type     | Description                        |
 |-------------------|----------|------------------------------------|
@@ -116,8 +116,6 @@ Distributed traces are captured by **Zipkin** at `localhost:9411`.
 | `GET`    | `/api/users/{id}/checkstatus`      | Check user role/status        |
 | `DELETE` | `/api/users/deletebyid/{id}`       | Delete user by ID             |
 
-> 🔐 JWT authentication is integrated — tokens are issued and validated per request.
-
 ---
 
 ### 🔄 3. Loan-Service
@@ -150,7 +148,7 @@ Distributed traces are captured by **Zipkin** at `localhost:9411`.
 ---
 
 ### 💰 4. Fine-Service
-> **Base URL**: `http://localhost:9092/api/fines` · **Database**: MySQL (Port: 9093)
+> **Base URL**: `http://localhost:9093/api/fines` · **Database**: MySQL (Port: 9093)
 
 | Field         | Type       | Description                     |
 |---------------|------------|---------------------------------|
@@ -183,7 +181,7 @@ All services (including the gateway) self-register with **Eureka Server** on sta
 
 | Incoming Path | Routed To          |
 |---------------|--------------------|
-| `/books/**`   | `book-catalog`     |
+| `/books/**`   | `book-service`     |
 | `/loans/**`   | `loan-service`     |
 | `/users/**`   | `user-service`     |
 | `/fines/**`   | `fine-service`     |
@@ -203,8 +201,6 @@ View traces at: `http://localhost:9411`
 | Cloud             | Spring Cloud (Eureka, Gateway, OpenFeign, Sleuth)|
 | Databases         | MySQL (Book-Catalog, User, Loan, Fine)           |
 | Build Tool        | Maven (multi-module project)                     |
-| Security          | JWT Authentication                               |
-| Testing           | JUnit 5, Mockito                                 |
 | Tracing           | Zipkin                                           |
 | Containerization  | Docker (optional)                                |
 
@@ -216,20 +212,12 @@ View traces at: `http://localhost:9411`
 
 - ☑️ Java 17 or later
 - ☑️ Maven
-- ☑️ Docker *(optional, recommended for infrastructure)*
+
 
 ---
 
 ### Step 1 — Start Infrastructure Services
 
-**Recommended: use Docker**
-
-```bash
-# Zipkin — distributed tracing UI
-docker run -d -p 9411:9411 openzipkin/zipkin
-
-# MySQL — for Book-Catalog, User, Loan, Fine services
-docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root mysql:8
 ```
 
 > **Alternative:** Run Zipkin directly from its JAR:
@@ -277,7 +265,7 @@ cd api-gateway
 mvn spring-boot:run
 ```
 
-> Gateway listens on: `http://localhost:8090`
+> Gateway listens on: `http://localhost:9095`
 
 ---
 
@@ -286,8 +274,9 @@ mvn spring-boot:run
 | Service         | Status Check URL                          |
 |-----------------|-------------------------------------------|
 | Eureka          | `http://localhost:8761`                   |
-| API Gateway     | `http://localhost:8090/actuator/health`   |
+| API Gateway     | `http://localhost:9095/actuator/health`   |
 | Zipkin UI       | `http://localhost:9411`                   |
+| Admin - server  | `http://localhost:8900`                   |
 
 ---
 
@@ -296,7 +285,7 @@ mvn spring-boot:run
 ### End-to-End Borrow Flow
 
 ```bash
-curl -X POST http://localhost:8090/api/loan/borrowbook \
+curl -X POST http://localhost:9095/api/loan/borrowbook \
   -H "Content-Type: application/json" \
   -d '{"title": "Spring Microservices in Action", "userId": 1}'
 ```
@@ -304,7 +293,7 @@ curl -X POST http://localhost:8090/api/loan/borrowbook \
 **What happens behind the scenes:**
 
 ```
-1. Client ──────────────────────► API Gateway (:8090)
+1. Client ──────────────────────► API Gateway (:9095)
 2. Gateway ─────────────────────► Loan-Service (:9092)
 3. Loan-Service ────────────────► Book-Catalog  (is book available?)
 4. Loan-Service ────────────────► User-Service  (is user an active member?)
