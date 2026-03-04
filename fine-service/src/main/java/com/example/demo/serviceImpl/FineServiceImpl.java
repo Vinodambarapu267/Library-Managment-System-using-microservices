@@ -29,15 +29,13 @@ public class FineServiceImpl implements FineService {
 	@Override
 	public Fine createFineForLoan(Long loanId) {
 		OverDueDto overDue = loanClient.checkOverDue(loanId);
-		if (overDue.getOverDueDays() > 0) {
-			Fine fine = new Fine();
-			fine.setAmount(overDue.getTotalAmount());
-			fine.setOverDueSince(LocalDate.now().minusDays(overDue.getOverDueDays()));
-			fine.setFineStatus(FineStatus.PENDING.name());
-			Fine save = fineRepository.save(fine);
-			return save;
-		}
-		throw new FineNotFoundException("No fine required - loan not overdue");
+		Fine fine = new Fine();
+		fine.setAmount(overDue.getTotalAmount());
+		fine.setOverDueSince(LocalDate.now().minusDays(overDue.getOverDueDays()));
+		fine.setFineStatus(FineStatus.PENDING.name());
+		fine.setLoanId(loanId);
+		Fine save = fineRepository.save(fine);
+		return save;
 	}
 
 	@Override
@@ -58,14 +56,26 @@ public class FineServiceImpl implements FineService {
 		return byFineStatus;
 	}
 
-	@Value("${app.scheduled.loan-id:1}") // From application.yml
-	private Long scheduledLoanId;
-
 	@Override
-	@Scheduled(cron = "0 0 10 * * *")
+	@Scheduled(cron = "0  0 7 * * *")
 	public void processDailyFines() {
-		OverDueDto checkOverDue = loanClient.checkOverDue(scheduledLoanId);
-		Double totalAmount = checkOverDue.getTotalAmount();
-		log.error("You Need to Pay amount for the OverDue for taking book : " + totalAmount);
+		List<Fine> allFines = fineRepository.findAll();
+		for (Fine fine : allFines) {
+			Long loanId = fine.getLoanId();
+			if (loanId == null) {
+				log.warn("Skipping fine {} with null loanId", fine.getFineId());
+				continue;
+			}
+			OverDueDto checkOverDue = loanClient.checkOverDue(loanId);
+			if (checkOverDue != null && checkOverDue.getTotalAmount() > 0) {
+				log.info("OverDue fine Processed : LoanID : {}, Amount : {}", fine.getLoanId(),
+						checkOverDue.getTotalAmount());
+				if (fine.getAmount() < checkOverDue.getTotalAmount()) {
+					fine.setAmount(checkOverDue.getTotalAmount());
+					fineRepository.save(fine);
+				}
+			}
+		}
+		log.info("Daily Fine Processing completed..");
 	}
 }

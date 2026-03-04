@@ -9,9 +9,9 @@ import com.example.demo.dto.BookAvailability;
 
 @FeignClient(name = "book-service",url = "http://localhost:9090")
 public interface BookClient {
-	@GetMapping("/api/v1/books/{title}/availability")
+	@GetMapping("/api/books/{title}/availability")
 	public Integer checkAvailability(@PathVariable("title") String title);
 
-	@PutMapping("/api/v1/books/{title}/copies/{newCopies}")
+	@PutMapping("/api/books/{title}/copies/{newCopies}")
 	public BookAvailability updateBookCopies(@PathVariable("title") String title, @PathVariable("newCopies") Integer newCopies);
 }

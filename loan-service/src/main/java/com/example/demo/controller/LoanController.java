@@ -65,9 +65,10 @@ public class LoanController {
 		return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
 				"Retrived All Loans ", all));
 	}
-@GetMapping("/{loanId}/overdue")
-public OverDueDto checkOverDue(@PathVariable Long loanId) {
-	OverDueDto calculateOverDue = loanService.calculateOverDue(loanId);
-	return calculateOverDue;
-}
+
+	@PostMapping("/{loanId}/overdue")
+	public OverDueDto checkOverDue(@PathVariable Long loanId) {
+		OverDueDto calculateOverDue = loanService.calculateOverDue(loanId);
+		return calculateOverDue;
+	}
 }

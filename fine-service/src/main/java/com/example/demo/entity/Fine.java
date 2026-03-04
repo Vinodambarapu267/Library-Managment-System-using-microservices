@@ -24,5 +24,6 @@ public class Fine {
 	private Long fineId;
 	private Double amount;
 	private LocalDate overDueSince;
+	private Long LoanId;
 	private String fineStatus = FineStatus.PENDING.name();
 }

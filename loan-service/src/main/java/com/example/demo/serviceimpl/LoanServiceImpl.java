@@ -116,10 +116,12 @@ public class LoanServiceImpl implements LoanService {
 		long rawDays = ChronoUnit.DAYS.between(dueDate, LocalDate.now());
 
 		long daysOverDue = Math.max(0, rawDays);
-		Double totalAmount = loan.getTotalAmount() != null ? loan.getTotalAmount() : 0.0;
+		Double principal = loan.getTotalAmount() == null ? 0.0 : 0.0;
 
-		Double fineAmount =totalAmount + 2 * daysOverDue;
-		Double totalAmountAfterFine = totalAmount + fineAmount;
-		return new OverDueDto(loanId, (int) daysOverDue, totalAmountAfterFine);
+		Double fineAmount = principal + 2 * daysOverDue;
+
+		loan.setTotalAmount(fineAmount);
+		loanRepository.save(loan);
+		return new OverDueDto(loanId, (int) daysOverDue, fineAmount);
 	}
 }
