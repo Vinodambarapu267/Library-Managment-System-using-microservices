@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.OverDueDto;
 import com.example.demo.entity.Fine;
+import com.example.demo.exception.FineNotFoundException;
 import com.example.demo.feignclient.LoanClient;
 import com.example.demo.repository.FineRepository;
 import com.example.demo.service.FineService;
@@ -36,14 +37,14 @@ public class FineServiceImpl implements FineService {
 			Fine save = fineRepository.save(fine);
 			return save;
 		}
-		throw new RuntimeException("No fine required - loan not overdue");
+		throw new FineNotFoundException("No fine required - loan not overdue");
 	}
 
 	@Override
 	public List<Fine> getAllFines() {
 		List<Fine> all = fineRepository.findAll();
 		if (all.isEmpty()) {
-			throw new RuntimeException("No Fines ");
+			throw new FineNotFoundException("No Fines ");
 		}
 		return all;
 	}
@@ -52,17 +53,19 @@ public class FineServiceImpl implements FineService {
 	public List<Fine> getAllPendingFine() {
 		List<Fine> byFineStatus = fineRepository.findByFineStatus(FineStatus.PENDING.name());
 		if (byFineStatus.isEmpty()) {
-			throw new RuntimeException("No Pending Fine are available");
+			throw new FineNotFoundException("No Pending Fine are available");
 		}
 		return byFineStatus;
 	}
-	@Value("${app.scheduled.loan-id:1}")  // From application.yml
+
+	@Value("${app.scheduled.loan-id:1}") // From application.yml
 	private Long scheduledLoanId;
+
 	@Override
 	@Scheduled(cron = "0 0 10 * * *")
 	public void processDailyFines() {
 		OverDueDto checkOverDue = loanClient.checkOverDue(scheduledLoanId);
 		Double totalAmount = checkOverDue.getTotalAmount();
-		log.error("You Need to Pay amount for the OverDue for taking book : "+totalAmount);
+		log.error("You Need to Pay amount for the OverDue for taking book : " + totalAmount);
 	}
 }
