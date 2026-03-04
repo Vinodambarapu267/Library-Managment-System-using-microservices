@@ -11,5 +11,4 @@ import com.example.demo.service.FineService;
 public class FIneController {
 	@Autowired
 	private FineService fineService;
-
 }

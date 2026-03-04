@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.BorrowRequest;
+import com.example.demo.dto.OverDueDto;
 import com.example.demo.entity.Loan;
 import com.example.demo.service.LoanService;
 import com.example.demo.utility.ResponseMessage;
@@ -64,5 +65,9 @@ public class LoanController {
 		return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
 				"Retrived All Loans ", all));
 	}
-
+@GetMapping("/{loanId}/overdue")
+public OverDueDto checkOverDue(@PathVariable Long loanId) {
+	OverDueDto calculateOverDue = loanService.calculateOverDue(loanId);
+	return calculateOverDue;
+}
 }

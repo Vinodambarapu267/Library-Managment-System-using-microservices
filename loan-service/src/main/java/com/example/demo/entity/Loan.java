@@ -1,6 +1,6 @@
 package com.example.demo.entity;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -22,8 +22,9 @@ public class Loan {
 	private Long loanId;
 	private String title;
 	private Long userId;
-	private LocalDateTime borrowAt;
-	private LocalDateTime dueDate;
-	private LocalDateTime returnredAt;
+	private LocalDate borrowAt;
+	private LocalDate dueDate;
+	private LocalDate returnredAt;
+	private Double totalAmount;
 	private String status;
 }

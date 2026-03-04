@@ -1,12 +1,14 @@
 package com.example.demo.serviceimpl;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.BorrowRequest;
+import com.example.demo.dto.OverDueDto;
 import com.example.demo.dto.UserRoleStatus;
 import com.example.demo.entity.Loan;
 import com.example.demo.exceptions.BookAlreadyReturnedException;
@@ -56,8 +58,8 @@ public class LoanServiceImpl implements LoanService {
 		Loan loan = new Loan();
 		loan.setTitle(borrowRequest.getTitle());
 		loan.setUserId(borrowRequest.getUserId());
-		loan.setBorrowAt(LocalDateTime.now());
-		loan.setDueDate(LocalDateTime.now().plusDays(5));
+		loan.setBorrowAt(LocalDate.now());
+		loan.setDueDate(LocalDate.now().plusDays(5));
 		loan.setStatus(LoanStatus.BORROWED.name());
 		Loan save = loanRepository.save(loan);
 		Integer newCopies = copiesAvailable - 1;
@@ -74,7 +76,7 @@ public class LoanServiceImpl implements LoanService {
 
 		Integer copiesAvailable = bookClient.checkAvailability(existedLoan.getTitle());
 
-		existedLoan.setReturnredAt(LocalDateTime.now());
+		existedLoan.setReturnredAt(LocalDate.now());
 		existedLoan.setStatus(LoanStatus.RETURNED.name());
 		existedLoan.setTitle(existedLoan.getTitle());
 
@@ -103,5 +105,21 @@ public class LoanServiceImpl implements LoanService {
 			throw new BorrowBooksNotFoundException("No Books borrowed by this User : " + userId);
 		}
 		return allByUserId;
+	}
+
+	@Override
+	public OverDueDto calculateOverDue(Long loanId) {
+		Loan loan = loanRepository.findById(loanId).orElseThrow(() -> new LoanNotFoundException("Loan Not Found"));
+
+		LocalDate dueDate = loan.getDueDate();
+
+		long rawDays = ChronoUnit.DAYS.between(dueDate, LocalDate.now());
+
+		long daysOverDue = Math.max(0, rawDays);
+		Double totalAmount = loan.getTotalAmount() != null ? loan.getTotalAmount() : 0.0;
+
+		Double fineAmount =totalAmount + 2 * daysOverDue;
+		Double totalAmountAfterFine = totalAmount + fineAmount;
+		return new OverDueDto(loanId, (int) daysOverDue, totalAmountAfterFine);
 	}
 }

@@ -15,4 +15,5 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
 	Optional<Loan> findByUserId(Long userId);
 
 	Optional<Loan> findByTitle(String title);
+	
 }
