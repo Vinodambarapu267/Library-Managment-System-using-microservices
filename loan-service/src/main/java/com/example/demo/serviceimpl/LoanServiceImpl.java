@@ -36,6 +36,7 @@ public class LoanServiceImpl implements LoanService {
 	@Autowired
 	private UserClient userClient;
 
+	@Override
 	public Loan borrowBook(BorrowRequest borrowRequest) {
 
 		List<Loan> availableLoans = loanRepository.findAllByUserIdAndStatus(borrowRequest.getUserId(),
