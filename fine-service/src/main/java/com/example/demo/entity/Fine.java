@@ -20,10 +20,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Fine {
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private Long fineId;
 	private Double amount;
 	private LocalDate overDueSince;
-	private Long LoanId;
+	private Long loanId;
 	private String fineStatus = FineStatus.PENDING.name();
 }

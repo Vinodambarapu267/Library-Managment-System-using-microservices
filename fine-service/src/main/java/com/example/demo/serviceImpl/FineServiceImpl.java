@@ -2,20 +2,22 @@ package com.example.demo.serviceImpl;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.OverDueDto;
 import com.example.demo.entity.Fine;
+import com.example.demo.exception.FineAlreadyExistedByLoanIdException;
 import com.example.demo.exception.FineNotFoundException;
 import com.example.demo.feignclient.LoanClient;
 import com.example.demo.repository.FineRepository;
 import com.example.demo.service.FineService;
 import com.example.demo.utility.FineStatus;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -28,6 +30,11 @@ public class FineServiceImpl implements FineService {
 
 	@Override
 	public Fine createFineForLoan(Long loanId) {
+		Optional<Fine> byLoanId = fineRepository.findByLoanId(loanId);
+		if (byLoanId.isPresent()) {
+			throw new FineAlreadyExistedByLoanIdException("Loan Alredy Existed ..");
+			
+		}
 		OverDueDto overDue = loanClient.checkOverDue(loanId);
 		Fine fine = new Fine();
 		fine.setAmount(overDue.getTotalAmount());
@@ -57,6 +64,7 @@ public class FineServiceImpl implements FineService {
 	}
 
 	@Override
+	@CircuitBreaker(name = "dailyFines", fallbackMethod = "fallbackProcessDailyFines")
 	@Scheduled(cron = "0  0 7 * * *")
 	public void processDailyFines() {
 		List<Fine> allFines = fineRepository.findAll();
@@ -77,5 +85,11 @@ public class FineServiceImpl implements FineService {
 			}
 		}
 		log.info("Daily Fine Processing completed..");
+	}
+
+	public void fallbackProcessDailyFines(Throwable t) {
+		log.warn("Daily fines processing fallback: loanClient unavailable - skipping overdue checks. {}",
+				t.getMessage());
+		log.info("Daily Fine Processing completed with fallback (local fines only)..");
 	}
 }
