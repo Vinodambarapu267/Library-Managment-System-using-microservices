@@ -1,5 +1,3 @@
-
-
 package com.example.demo.controller;
 
 import java.net.HttpURLConnection;
@@ -18,47 +16,60 @@ import com.example.demo.service.FineService;
 import com.example.demo.utility.ResponseMessage;
 import com.example.demo.utility.ResponseStatus;
 
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/fines")
-public class FIneController {
+@Slf4j
+public class FineController {
 	@Autowired
 	private FineService fineService;
 
 	@PostMapping("/createfine")
 	public ResponseEntity<?> createFine(@RequestParam Long loanId) {
+		log.debug("Received create fine request: loanId={}", loanId);
+		
 		Fine fineForLoan = fineService.createFineForLoan(loanId);
 		if (fineForLoan != null) {
+			log.info("Fine created successfully: loanId={}", loanId);
 			return ResponseEntity.ok(new ResponseMessage(fineForLoan, HttpURLConnection.HTTP_CREATED,
-					ResponseStatus.SUCCESS.name(), "Fine details added Successfully"));
+					ResponseStatus.SUCCESS.name(), "Fine details added successfully"));
 		} else {
+			log.warn("Fine creation failed: loanId={}", loanId);
 			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_INTERNAL_ERROR,
-					ResponseStatus.FAILURE.name(), "Internale Server Error"));
+					ResponseStatus.FAILURE.name(), "Internal server error"));
 		}
 	}
 
 	@GetMapping
 	public ResponseEntity<?> findAll() {
+		log.debug("Fetching all fines");
+		
 		List<Fine> allFines = fineService.getAllFines();
 		if (allFines != null) {
-			return ResponseEntity.ok(new ResponseMessage(allFines, HttpURLConnection.HTTP_CREATED,
-					ResponseStatus.SUCCESS.name(), "Fine details added Successfully"));
+			log.info("Retrieved {} fines total", allFines.size());
+			return ResponseEntity.ok(new ResponseMessage(allFines, HttpURLConnection.HTTP_OK,
+					ResponseStatus.SUCCESS.name(), "All fines retrieved successfully"));
 		} else {
+			log.warn("No fines found");
 			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_INTERNAL_ERROR,
-					ResponseStatus.FAILURE.name(), "Internale Server Error"));
+					ResponseStatus.FAILURE.name(), "Internal server error"));
 		}
 	}
 
 	@GetMapping("/getallpendingfines")
 	public ResponseEntity<?> getPendingFines() {
+		log.debug("Fetching all pending fines");
+		
 		List<Fine> allPendingFine = fineService.getAllPendingFine();
 		if (allPendingFine != null) {
-			return ResponseEntity.ok(new ResponseMessage(allPendingFine, HttpURLConnection.HTTP_CREATED,
-					ResponseStatus.SUCCESS.name(), "Fine details added Successfully"));
+			log.info("Retrieved {} pending fines", allPendingFine.size());
+			return ResponseEntity.ok(new ResponseMessage(allPendingFine, HttpURLConnection.HTTP_OK,
+					ResponseStatus.SUCCESS.name(), "Pending fines retrieved successfully"));
 		} else {
+			log.warn("No pending fines found");
 			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_INTERNAL_ERROR,
-					ResponseStatus.FAILURE.name(), "Internale Server Error"));
+					ResponseStatus.FAILURE.name(), "Internal server error"));
 		}
 	}
 }
