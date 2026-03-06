@@ -20,55 +20,79 @@ import com.example.demo.service.LoanService;
 import com.example.demo.utility.ResponseMessage;
 import com.example.demo.utility.ResponseStatus;
 
+import lombok.extern.slf4j.Slf4j;
+
 @RestController
 @RequestMapping("/api/loan")
+@Slf4j
 public class LoanController {
 	@Autowired
 	private LoanService loanService;
 
 	@PostMapping("/borrowbook")
 	public ResponseEntity<?> borrowBook(@RequestBody BorrowRequest borrowRequest) {
+		log.debug("Received borrow request: userId={}, title='{}'", 
+		          borrowRequest.getUserId(), borrowRequest.getTitle());
+		
 		Loan borrowBook = loanService.borrowBook(borrowRequest);
 		if (borrowBook != null) {
+			log.info("Book borrowed successfully: loanId={}", borrowBook.getLoanId());
 			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
-					" book Borrow Successfully", borrowBook));
+					"Book borrowed successfully", borrowBook));
 		} else {
+			log.warn("Book borrow failed: userId={}, title='{}'", 
+			       borrowRequest.getUserId(), borrowRequest.getTitle());
 			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_INTERNAL_ERROR,
-					ResponseStatus.FAILURE.name(), "book Borrow is Failed"));
+					ResponseStatus.FAILURE.name(), "Book borrow failed"));
 		}
 	}
 
 	@PutMapping("/returnbook/{loanId}")
 	public ResponseEntity<?> returnBook(@PathVariable Long loanId) {
+		log.debug("Received return request: loanId={}", loanId);
+		
 		Loan returnBook = loanService.returnBook(loanId);
 		if (returnBook != null) {
-			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
-					"returned SuccessFully", returnBook));
+			log.info("Book returned successfully: loanId={}", loanId);
+			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_OK, ResponseStatus.SUCCESS.name(),
+					"Book returned successfully", returnBook));
 		} else {
+			log.warn("Book return failed: loanId={}", loanId);
 			return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_INTERNAL_ERROR,
-					ResponseStatus.FAILURE.name(), "Return Failed"));
+					ResponseStatus.FAILURE.name(), "Book return failed"));
 		}
 	}
 
 	@GetMapping("/{userId}/Loans")
 	public ResponseEntity<?> findAllById(@PathVariable Long userId) {
+		log.debug("Fetching loans for userId: {}", userId);
+		
 		List<Loan> byUserId = loanService.findByUserId(userId);
+		log.info("Retrieved {} loans for userId: {}", byUserId.size(), userId);
 
-		return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
-				"Borrowed Books under this User ID : " + userId, byUserId));
+		return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_OK, ResponseStatus.SUCCESS.name(),
+				"Borrowed books for user ID: " + userId, byUserId));
 	}
 
 	@GetMapping
 	public ResponseEntity<?> findAll() {
+		log.debug("Fetching all loans");
+		
 		List<Loan> all = loanService.findAll();
+		log.info("Retrieved {} loans total", all.size());
 
-		return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_CREATED, ResponseStatus.SUCCESS.name(),
-				"Retrived All Loans ", all));
+		return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_OK, ResponseStatus.SUCCESS.name(),
+				"All loans retrieved", all));
 	}
 
 	@PostMapping("/{loanId}/overdue")
-	public OverDueDto checkOverDue(@PathVariable Long loanId) {
+	public ResponseEntity<?> checkOverDue(@PathVariable Long loanId) {
+		log.debug("Checking overdue for loanId: {}", loanId);
+		
 		OverDueDto calculateOverDue = loanService.calculateOverDue(loanId);
-		return calculateOverDue;
+		log.info("Overdue calculated for loanId: {}, days={}, fine=${}", 
+		         loanId, calculateOverDue.getOverDueDays(), calculateOverDue.getTotalAmount());
+		
+		return ResponseEntity.ok(calculateOverDue);
 	}
 }
