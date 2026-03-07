@@ -213,28 +213,34 @@ View traces at: `http://localhost:9411`
 - ☑️ Java 17 or later
 - ☑️ Maven
 
-
 ---
 
-### Step 1 — Start Infrastructure Services
+## Step 1 — Start Zipkin (Distributed Tracing)
 
+### Option A: Docker (Recommended)
+
+```bash
+docker run -d -p 9411:9411 openzipkin/zipkin
 ```
 
-> **Alternative:** Run Zipkin directly from its JAR:
-> ```bash
-> java -jar zipkin.jar
-> ```
+### Option B: Run from JAR
+
+```bash
+java -jar zipkin.jar
+```
+
+> Zipkin UI will be available at: `http://localhost:9411`
 
 ---
 
-### Step 2 — Start Eureka Server
+## Step 2 — Start Eureka Server
 
 ```bash
 cd eureka-server
 mvn spring-boot:run
 ```
 
-> Eureka dashboard: `http://localhost:8761`
+> Eureka Dashboard will be available at: `http://localhost:8761`
 
 ---
 
