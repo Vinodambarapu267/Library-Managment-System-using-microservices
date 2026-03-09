@@ -49,7 +49,7 @@ public class BookServiceImpl implements BookService {
 	public Book updateBook(Long id, BookDto bookDto) {
 		log.debug("Updating book with ID: {}", id);
 		Book existedBook = bookRepository.findById(id).orElseThrow(() -> {
-			log.warn("Book not Found ID: {}}", id);
+			log.warn("Book not Found ID: {}", id);
 			return new BookNotFoundException("Book not Found ID : " + id);
 		});
 		existedBook.setAuthor(bookDto.getAuthor());
