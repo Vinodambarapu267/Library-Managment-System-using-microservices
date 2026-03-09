@@ -5,6 +5,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.BorrowRequest;
@@ -25,6 +27,7 @@ import com.example.demo.utility.LoanStatus;
 
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+
 @Service
 @Transactional
 @Slf4j
@@ -40,7 +43,6 @@ public class LoanServiceImpl implements LoanService {
 	@Override
 	public Loan borrowBook(BorrowRequest borrowRequest) {
 		log.debug("Borrow book request: userId={}, title='{}'", borrowRequest.getUserId(), borrowRequest.getTitle());
-		
 		List<Loan> availableLoans = loanRepository.findAllByUserIdAndStatus(borrowRequest.getUserId(),
 				LoanStatus.BORROWED.name());
 		for (Loan existedloan : availableLoans) {
@@ -77,13 +79,13 @@ public class LoanServiceImpl implements LoanService {
 		return save;
 	}
 
+	@CachePut(value = "loans", key = "#loandId")
 	public Loan returnBook(Long loanId) {
 		log.debug("Return book request: loanId={}", loanId);
-		Loan existedLoan = loanRepository.findById(loanId)
-				.orElseThrow(() -> {
-					log.warn("Loan not found: loanId={}", loanId);
-					return new LoanNotFoundException("Loan not found");
-				});
+		Loan existedLoan = loanRepository.findById(loanId).orElseThrow(() -> {
+			log.warn("Loan not found: loanId={}", loanId);
+			return new LoanNotFoundException("Loan not found");
+		});
 		if (existedLoan.getStatus().equals(LoanStatus.RETURNED.name())) {
 			log.warn("Book already returned: loanId={}, title='{}'", loanId, existedLoan.getTitle());
 			throw new BookAlreadyReturnedException(" Already Returned the book : " + existedLoan.getTitle());
@@ -103,6 +105,7 @@ public class LoanServiceImpl implements LoanService {
 		return returned;
 	}
 
+	@Cacheable(value = "loans", key = "'all'")
 	public List<Loan> findAll() {
 		log.debug("Fetching all loans");
 		List<Loan> all = loanRepository.findAll();
@@ -114,13 +117,13 @@ public class LoanServiceImpl implements LoanService {
 		return all;
 	}
 
+	@Cacheable(value = "loans", key = "#userId")
 	public List<Loan> findByUserId(Long userId) {
 		log.debug("Fetching loans for userId: {}", userId);
-		Loan user = loanRepository.findByUserId(userId)
-				.orElseThrow(() -> {
-					log.warn("User not found: userId={}", userId);
-					return new UserNotAuthorizedException("User Not Found");
-				});
+		Loan user = loanRepository.findByUserId(userId).orElseThrow(() -> {
+			log.warn("User not found: userId={}", userId);
+			return new UserNotAuthorizedException("User Not Found");
+		});
 
 		List<Loan> allByUserId = loanRepository.findAllByUserId(user.getUserId());
 		if (allByUserId.isEmpty()) {
@@ -132,6 +135,7 @@ public class LoanServiceImpl implements LoanService {
 	}
 
 	@Override
+	@CachePut(value = "overDueDto",key = "#loanId")
 	public OverDueDto calculateOverDue(Long loanId) {
 		log.debug("Calculating overdue for loanId: {}", loanId);
 		Loan loan = loanRepository.findById(loanId).orElseThrow(() -> {

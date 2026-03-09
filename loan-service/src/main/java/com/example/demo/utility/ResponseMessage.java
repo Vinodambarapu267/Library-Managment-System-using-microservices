@@ -15,6 +15,7 @@ public class ResponseMessage {
 	private String message;
 	private List<?> list;
 	private Object data;
+
 	public ResponseMessage(Integer statuscode, String status, String message) {
 		super();
 		this.statusCode = statuscode;
@@ -31,7 +32,7 @@ public class ResponseMessage {
 	}
 
 	public ResponseMessage(Integer statuscode, String status, String message, List<?> list) {
-
+		super();
 		this.statusCode = statuscode;
 		this.status = status;
 		this.message = message;
