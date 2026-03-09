@@ -1,6 +1,9 @@
 package com.example.demo.serviceimpl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.entity.Book;
@@ -18,6 +21,8 @@ public class BookCopiesUpdateServiceImpl implements BookCopiesUpdateService {
 	private BookRepository bookRepository;
 
 	@Override
+	@CachePut(value = "books",key = "#title")
+	@CacheEvict(value = "booksList",allEntries = true)
 	public Book updateTotalBookCopies(String title, Integer newCopies) {
 	    Book book = bookRepository.findByTitle(title).orElseThrow(() -> new BookNotFoundException("Book not found"));
 	    
@@ -33,6 +38,7 @@ public class BookCopiesUpdateServiceImpl implements BookCopiesUpdateService {
 	}
 
 	@Override
+	@CachePut(value = "books",key = "#title")
 	public Book issueBook(String title) {
 		Book book = bookRepository.findByTitle(title).orElseThrow(() -> new BookNotFoundException("Book not found"));
 		if (book.getCopiesAvailable() > 0) {
@@ -43,6 +49,7 @@ public class BookCopiesUpdateServiceImpl implements BookCopiesUpdateService {
 	}
 
 	@Override
+	@CachePut(value = "books",key = "#title")
 	public Book returnBook(String title) {
 		Book book = bookRepository.findByTitle(title).orElseThrow(() -> new BookNotFoundException("Book not found"));
 		book.returnBook();
@@ -50,6 +57,7 @@ public class BookCopiesUpdateServiceImpl implements BookCopiesUpdateService {
 	}
 
 	@Override
+	@Cacheable(value = "books",key = "#title")
 	public Integer availabiltyBook(String title) {
 		Book book = bookRepository.findByTitle(title).orElseThrow(() -> new RuntimeException("Book Not found"));
 		Integer copiesAvailable = book.getCopiesAvailable();

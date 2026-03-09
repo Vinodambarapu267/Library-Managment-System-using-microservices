@@ -5,6 +5,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.BookDto;
@@ -21,6 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 public class BookServiceImpl implements BookService {
 	@Autowired
 	private BookRepository bookRepository;
+	@Autowired
+	private CacheManager cacheManager;
 
 	@Override
 	public Book createBook(Book book) {
@@ -38,6 +45,7 @@ public class BookServiceImpl implements BookService {
 	}
 
 	@Override
+	@CachePut(value = "books", key = "#id")
 	public Book updateBook(Long id, BookDto bookDto) {
 		log.debug("Updating book with ID: {}", id);
 		Book existedBook = bookRepository.findById(id).orElseThrow(() -> {
@@ -53,10 +61,13 @@ public class BookServiceImpl implements BookService {
 		existedBook.setCategory(bookDto.getCategory());
 		Book update = bookRepository.save(existedBook);
 		log.info("book Updated Successfully - ID: {}" + update.getId());
+		Cache booksCache = cacheManager.getCache("books");
+		booksCache.put(id, update);
 		return update;
 	}
 
 	@Override
+	@Cacheable(value = "books", key = "#isbn")
 	public Book getByIsbn(String isbn) {
 		log.debug("Searching Book By ISBN:{}", isbn);
 		Book book = bookRepository.findByIsbn(isbn.trim()).orElseThrow(() -> {
@@ -68,6 +79,7 @@ public class BookServiceImpl implements BookService {
 	}
 
 	@Override
+	@CacheEvict(value = "books", key = "#isbn")
 	public void deleteBook(String isbn) {
 		log.debug("Deleting book by ISBN : {}", isbn);
 		Book delete = bookRepository.findByIsbn(isbn).orElseThrow(() -> {
@@ -80,6 +92,7 @@ public class BookServiceImpl implements BookService {
 	}
 
 	@Override
+	@Cacheable(value = "books", key = "'all'")
 	public List<Book> findAll() {
 		log.debug("Fetching All Books from repository");
 		List<Book> all = bookRepository.findAll();
@@ -91,6 +104,7 @@ public class BookServiceImpl implements BookService {
 		return all;
 	}
 
+	@Cacheable(value = "books", key = "#title")
 	@Override
 	public List<Book> findByTitleContainingIgnoreCase(String title) {
 		log.debug("Searching  books containing Title : {}", title);
@@ -103,6 +117,7 @@ public class BookServiceImpl implements BookService {
 		return byTitleContainingIgnoreCase;
 	}
 
+	@Cacheable(value = "books", key = "#author")
 	@Override
 	public List<Book> findByAuthorContainingIgnoreCase(String author) {
 		log.debug("Searching  books by author : {}", author);
@@ -115,6 +130,7 @@ public class BookServiceImpl implements BookService {
 
 	}
 
+	@Cacheable(value = "books", key = "'long'")
 	@Override
 	public Long totalBooksCount() {
 		log.debug("Counting the books");
