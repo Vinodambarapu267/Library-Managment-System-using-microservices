@@ -97,6 +97,7 @@ public class LibraryUserServieImpl implements LibraryUserServie {
 	}
 
 	@Override
+	@Cacheable(value = "UserRoleStatus",key = "#id")
 	public UserRoleStatus checkRoleStatus(Long id) {
 		log.debug("Checking user role by ID:{}", id);
 		LibraryUser user = userRepository.findById(id).orElseThrow(() -> {
