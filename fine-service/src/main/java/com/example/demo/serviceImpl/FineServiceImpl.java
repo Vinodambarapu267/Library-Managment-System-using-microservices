@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -49,6 +51,7 @@ public class FineServiceImpl implements FineService {
 	}
 
 	@Override
+	@Cacheable(value = "loans",key = "'all'")
 	public List<Fine> getAllFines() {
 		log.debug("Fetching all fines");
 		List<Fine> all = fineRepository.findAll();
@@ -61,6 +64,7 @@ public class FineServiceImpl implements FineService {
 	}
 
 	@Override
+	@Cacheable(value = "loans",key = "'allpendingloans'")
 	public List<Fine> getAllPendingFine() {
 		log.debug("Fetching all pending fines");
 		List<Fine> byFineStatus = fineRepository.findByFineStatus(FineStatus.PENDING.name());
@@ -75,6 +79,7 @@ public class FineServiceImpl implements FineService {
 	@Override
 	@CircuitBreaker(name = "dailyFines", fallbackMethod = "fallbackProcessDailyFines")
 	@Scheduled(cron = "0  0 7 * * *")
+	@CacheEvict(value = "loans",key = "'allfines'")
 	public void processDailyFines() {
 		log.info("Starting daily fines processing");
 		List<Fine> allFines = fineRepository.findAll();
