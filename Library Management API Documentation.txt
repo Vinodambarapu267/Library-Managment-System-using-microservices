@@ -1,224 +1,582 @@
-================================================================================
-                       LIBRARY MANAGEMENT API DOCUMENTATION
-================================================================================
+====================================================================
+  LibraMS — Library Management System
+  API Documentation
+  Full-Stack: Spring Boot 3.5 + React 18
+  Base URL: http://localhost:9095  (API Gateway)
+====================================================================
 
---------------------------------------------------------------------------------
- 1. BOOK SERVICE                                              [ PORT : 9091 ]
-    Base URL : http://localhost:9091/api/books
---------------------------------------------------------------------------------
+All requests go through the API Gateway on port 9095.
+React frontend proxies /api/* → http://localhost:9095
 
-  CORE ENDPOINTS
-  ~~~~~~~~~~~~~~
+====================================================================
+  SERVICE PORTS
+====================================================================
 
-  #1  ADD BOOK
-      Method : POST
-      URL    : http://localhost:9091/api/books/addbook
-      Body   : {
-                   "id"               : 1,
-                   "isbn"             : "9780134685991",
-                   "title"            : "Spring Microservices in Action",
-                   "author"           : "John Carnell",
-                   "copiesAvailable"  : 3,
-                   "totalCopies"      : 5,
-                   "category"         : "Technology",
-                   "publishedYear"    : 2020,
-                   "bookStatus"       : "AVAILABLE"
-               }
+  Eureka Server     → http://localhost:8761
+  API Gateway       → http://localhost:9095
+  Admin Server      → http://localhost:8900
+  Book-Service      → http://localhost:9090
+  User-Service      → http://localhost:9091
+  Loan-Service      → http://localhost:9092
+  Fine-Service      → http://localhost:9093
+  Zipkin            → http://localhost:9411
+  React Frontend    → http://localhost:3000
 
-  ............................................................................
+====================================================================
+  RESPONSE ENVELOPE FORMAT
+====================================================================
 
-  #2  UPDATE BOOK
-      Method : PUT
-      URL    : http://localhost:9091/api/books/updatebook/{id}
-      Body   : {
-                   "isbn"             : "9780134685991",
-                   "title"            : "Spring Microservices in Action",
-                   "author"           : "John Carnell",
-                   "copiesAvailable"  : 3,
-                   "totalCopies"      : 5,
-                   "category"         : "Technology",
-                   "publishedYear"    : 2020,
-                   "bookStatus"       : "AVAILABLE"
-               }
+Each service wraps responses differently:
 
-  ............................................................................
+  Book-Service  → { "statuscode": 200, "status": "OK",
+                    "message": "...", "data": [...] }
 
-  #3  GET BY ISBN
-      Method : GET
-      URL    : http://localhost:9091/api/books/getbyisbn
-      Param  : @RequestParam String isbn
+  User-Service  → { "statuscode": 200, "status": "OK",
+                    "message": "...", "list": [...] }
 
-  ............................................................................
+  Loan-Service  → { "statusCode": 200, "status": "OK",
+                    "message": "...", "data": [...] }
+                  OR single Loan object directly
 
-  #4  FIND ALL BOOKS
-      Method : GET
-      URL    : http://localhost:9091/api/books
+  Fine-Service  → { "statusCode": 200, "status": "OK",
+                    "message": "...", "data": [...] }
+                  OR single Fine object directly
 
-  ............................................................................
+====================================================================
+  1. BOOK-SERVICE
+  Base URL: /api/books
+====================================================================
 
-  #5  FIND BY AUTHOR
-      Method : GET
-      URL    : http://localhost:9091/api/books/findbyauthor/{author}
-      Param  : @PathVariable String author
+--------------------------------------------------------------------
+  POST /api/books/addbook
+  Add a new book to the catalog
+--------------------------------------------------------------------
+  Request Body:
+  {
+    "title"        : "Clean Code",
+    "author"       : "Robert C. Martin",
+    "category"     : "Programming",
+    "totalCopies"  : 5,
+    "publishedYear": 2008,
+    "bookStatus"   : "AVAILABLE"
+  }
 
-  ............................................................................
+  Notes:
+  - isbn is auto-generated (UUID-based, 13 chars uppercase)
+  - copiesAvailable defaults to totalCopies on creation
+  - bookStatus: AVAILABLE or UNAVAILABLE
 
-  #6  TOTAL BOOK COUNT
-      Method : GET
-      URL    : http://localhost:9091/api/books/totalbooks
+  Response: 200 OK
+  {
+    "statuscode" : 200,
+    "status"     : "SUCCESS",
+    "message"    : "Book Created Successfully",
+    "data"       : {
+      "id"              : 1,
+      "isbn"            : "A1B2C3D4E5F6G",
+      "title"           : "Clean Code",
+      "author"          : "Robert C. Martin",
+      "category"        : "Programming",
+      "copiesAvailable" : 5,
+      "totalCopies"     : 5,
+      "publishedYear"   : 2008,
+      "bookStatus"      : "AVAILABLE"
+    }
+  }
 
-  ............................................................................
+--------------------------------------------------------------------
+  PUT /api/books/updatebook/{id}
+  Update book details by ID
+--------------------------------------------------------------------
+  Path Variable: id (Long)
 
-  #7  DELETE BY ISBN
-      Method : DELETE
-      URL    : http://localhost:9091/api/books/deletebook/{isbn}
+  Request Body:
+  {
+    "title"          : "Clean Code (Updated)",
+    "author"         : "Robert C. Martin",
+    "category"       : "Programming",
+    "totalCopies"    : 10,
+    "copiesAvailable": 8,
+    "publishedYear"  : 2008
+  }
 
-  INVENTORY MANAGEMENT
-  ~~~~~~~~~~~~~~~~~~~~
+  Response: 200 OK — updated Book object
 
-  #8  UPDATE TOTAL COPIES
-      Method : PATCH
-      URL    : http://localhost:9091/api/books/{title}/copies/{newCopies}
-      Params : @PathVariable("title") String title
-               @PathVariable("newCopies") int newCopies
+--------------------------------------------------------------------
+  GET /api/books
+  List all books
+--------------------------------------------------------------------
+  No request body required.
 
-  ............................................................................
+  Response: 200 OK
+  {
+    "statuscode": 200,
+    "status"    : "OK",
+    "message"   : "all books found successfully",
+    "data"      : [ { ...book objects... } ]
+  }
 
-  #9  ISSUE BOOK
-      Method : PATCH
-      URL    : http://localhost:9091/api/books/{title}/issue
-      Param  : @PathVariable String title
+--------------------------------------------------------------------
+  GET /api/books/getbyisbn?isbn={isbn}
+  Retrieve single book by ISBN
+--------------------------------------------------------------------
+  Query Param: isbn (String)
 
-  ............................................................................
+  Example: GET /api/books/getbyisbn?isbn=A1B2C3D4E5F6G
 
-  #10 RETURN BOOK
-      Method : PATCH
-      URL    : http://localhost:9091/api/books/{title}/return
-      Param  : @PathVariable String title
+  Response: 200 OK — single Book object in data field
 
-  ............................................................................
+--------------------------------------------------------------------
+  GET /api/books/findbyauthor/{author}
+  Find books by author (partial match, case-insensitive)
+--------------------------------------------------------------------
+  Path Variable: author (String, URL-encoded)
 
-  #11 CHECK AVAILABILITY BY TITLE
-      Method : GET
-      URL    : http://localhost:9091/api/books/{title}/availability
-      Param  : @PathVariable String title
+  Example: GET /api/books/findbyauthor/Robert
 
+  Response: 200 OK — array of matching Book objects
 
---------------------------------------------------------------------------------
- 2. USER SERVICE                                              [ PORT : 9091 ]
-    Base URL : http://localhost:9091/api/users
---------------------------------------------------------------------------------
+--------------------------------------------------------------------
+  GET /api/books/totalbooks
+  Get total book count
+--------------------------------------------------------------------
+  Response: 200 OK
+  {
+    "statuscode": 200,
+    "data"      : 42
+  }
 
-  #1  REGISTER USER
-      Method : POST
-      URL    : http://localhost:9091/api/users/register
-      Param  : @RequestBody LibraryUser libraryUser
-      Body   : {
-                   "userName"  : "john_doe",
-                   "email"     : "john.doe@library.com",
-                   "password"  : "encodedPass123",
-                   "role"      : "STUDENT"
-               }
+--------------------------------------------------------------------
+  DELETE /api/books/deletebook/{isbn}
+  Delete a book by ISBN
+--------------------------------------------------------------------
+  Path Variable: isbn (String)
 
-  ............................................................................
+  Example: DELETE /api/books/deletebook/A1B2C3D4E5F6G
 
-  #2  UPDATE USER
-      Method : PUT
-      URL    : http://localhost:9091/api/users/updateUser/{id}
-      Params : @RequestParam Long id
-               @RequestBody UserDto dto
-      Body   : {
-                   "userName"  : "john_doe",
-                   "email"     : "john.doe@library.com",
-                   "password"  : "securePass123",
-                   "role"      : "STUDENT"
-               }
+  Response: 200 OK
+  {
+    "statuscode": 200,
+    "message"   : "Book deleted successfully"
+  }
 
-  ............................................................................
+--------------------------------------------------------------------
+  PUT /api/books/{title}/copies/{n}
+  Update total copies for a book by title
+--------------------------------------------------------------------
+  Path Variables:
+    title (String, URL-encoded)
+    n     (Integer) — new total copies value
 
-  #3  FIND BY ID
-      Method : GET
-      URL    : http://localhost:9091/api/users/getbyid/{id}
-      Param  : @PathVariable Long id
+  Example: PUT /api/books/Clean%20Code/copies/10
 
-  ............................................................................
+  Response: 200 OK — updated Book object
 
-  #4  FIND ALL USERS
-      Method : GET
-      URL    : http://localhost:9091/api/users
+  NOTE: If multiple books share the same title, this will throw
+  NonUniqueResultException. Ensure unique titles.
 
-  ............................................................................
+--------------------------------------------------------------------
+  PUT /api/books/{title}/issue
+  Issue a book — decrement copiesAvailable by 1
+--------------------------------------------------------------------
+  Called internally by Loan-Service via Feign on borrow.
 
-  #5  CHECK ROLE STATUS
-      Method : GET
-      URL    : http://localhost:9091/api/users/{id}/checkstatus
-      Param  : @PathVariable Long id
+  Example: PUT /api/books/Clean%20Code/issue
 
-  ............................................................................
+  Response: 200 OK
 
-  #6  DELETE BY ID
-      Method : DELETE
-      URL    : http://localhost:9091/api/users/deletebyid/{id}
-      Param  : @PathParam(value = "id") Long id
+--------------------------------------------------------------------
+  PUT /api/books/{title}/return
+  Return a book — increment copiesAvailable by 1
+--------------------------------------------------------------------
+  Called internally by Loan-Service via Feign on return.
 
+  Example: PUT /api/books/Clean%20Code/return
 
---------------------------------------------------------------------------------
- 3. LOAN SERVICE                                              [ PORT : 9092 ]
-    Base URL : http://localhost:9092/api/loan
---------------------------------------------------------------------------------
+  Response: 200 OK
 
-  #1  BORROW BOOK
-      Method : POST
-      URL    : http://localhost:9092/api/loan/borrowbook
-      Body   : {
-                   "title"   : "Spring Microservices in Action",
-                   "userId"  : 1
-               }
+--------------------------------------------------------------------
+  GET /api/books/{title}/availability
+  Get current copiesAvailable count for a book
+--------------------------------------------------------------------
+  Returns: Integer (NOT wrapped — returns plain number)
 
-  ............................................................................
+  Example: GET /api/books/Clean%20Code/availability
 
-  #2  RETURN BOOK
-      Method : PUT
-      URL    : http://localhost:9092/api/loan/returnbook/{loanId}
-      Param  : @PathVariable Long loanId
+  Response: 200 OK
+  3
 
-  ............................................................................
+  NOTE: Returns plain Integer, not wrapped in ResponseMessage.
+  Feign clients must declare return type as Integer.
 
-  #3  FIND LOANS BY USER ID
-      Method : GET
-      URL    : http://localhost:9092/api/loan/{userId}/Loans
-      Param  : @PathVariable Long userId
+====================================================================
+  2. USER-SERVICE
+  Base URL: /api/users
+====================================================================
 
-  ............................................................................
+--------------------------------------------------------------------
+  POST /api/users/register
+  Register a new user
+--------------------------------------------------------------------
+  Request Body:
+  {
+    "userName": "johndoe",
+    "email"   : "john@example.com",
+    "password": "password123",
+    "role"    : "STUDENT"
+  }
 
-  #4  TOTAL LOANS
-      Method : GET
-      URL    : http://localhost:9092/api/loan
+  Roles: STUDENT, FACULTY, STAFF, LIBRARIAN, ADMIN, GUEST
+  Password is Base64-encoded before storing.
 
+  Response: 200 OK
+  {
+    "statuscode": 201,
+    "status"    : "SUCCESS",
+    "message"   : "User registered Successfully",
+    "data"      : {
+      "id"      : 1,
+      "userName": "johndoe",
+      "email"   : "john@example.com",
+      "role"    : "STUDENT",
+      "active"  : true
+    }
+  }
 
---------------------------------------------------------------------------------
- 4. FINE SERVICE                                              [ PORT : 9093 ]
-    Base URL : http://localhost:9092/api/fines
---------------------------------------------------------------------------------
+--------------------------------------------------------------------
+  PUT /api/users/updateUser/{id}          ← FIXED (was /updateUser/id)
+  Update user details by ID
+--------------------------------------------------------------------
+  Path Variable: id (Long)
 
-  #1  INSERT FINE
-      Method : POST
-      URL    : http://localhost:9092/api/fines/createfine
-      Param  : @RequestParam Long loanId
+  Request Body:
+  {
+    "userName": "johndoe_updated",
+    "email"   : "john_new@example.com",
+    "password": "newpassword",
+    "role"    : "LIBRARIAN"
+  }
 
-  ............................................................................
+  Response: 200 OK — updated LibraryUser object
 
-  #2  GET TOTAL FINES
-      Method : GET
-      URL    : http://localhost:9092/api/fines
+  BUG FIX: Previously mapped as @PutMapping("/updateUser/id") which
+  made id always null. Fixed to @PutMapping("/updateUser/{id}")
+  with @PathVariable.
 
-  ............................................................................
+--------------------------------------------------------------------
+  GET /api/users
+  List all users
+--------------------------------------------------------------------
+  Response: 200 OK
+  {
+    "statuscode": 201,
+    "status"    : "SUCCESS",
+    "message"   : "all user retrieved Successfully",
+    "list"      : [ { ...user objects... } ]
+  }
 
-  #3  GET ALL PENDING FINES
-      Method : GET
-      URL    : http://localhost:9092/api/fines/getallpendingfines
+  NOTE: Response uses "list" key (not "data") — unique to User-Service.
+  Returns empty list [] when no users exist (does NOT throw exception).
 
+--------------------------------------------------------------------
+  GET /api/users/getbyid/{id}
+  Find user by ID
+--------------------------------------------------------------------
+  Path Variable: id (Long)
 
-================================================================================
-  4 Services  |  24 Endpoints  |  Ports: 9091, 9092, 9093
-================================================================================
+  Example: GET /api/users/getbyid/1
+
+  Response: 200 OK — single LibraryUser object
+
+--------------------------------------------------------------------
+  GET /api/users/{id}/checkstatus
+  Check user role and borrow eligibility
+--------------------------------------------------------------------
+  Path Variable: id (Long)
+
+  Example: GET /api/users/1/checkstatus
+
+  Response: 200 OK
+  {
+    "role"          : "STUDENT",
+    "active"        : true,
+    "allowToBorrow" : true
+  }
+
+  allowToBorrow = true  for: STUDENT, FACULTY, STAFF
+  allowToBorrow = false for: GUEST, INACTIVE
+
+--------------------------------------------------------------------
+  DELETE /api/users/deletebyid/{id}       ← FIXED (@PathVariable)
+  Delete user by ID
+--------------------------------------------------------------------
+  Path Variable: id (Long)
+
+  Example: DELETE /api/users/deletebyid/1
+
+  Response: 200 OK
+  {
+    "statuscode": 200,
+    "message"   : "User deleted successfully"
+  }
+
+  BUG FIX: Was using @PathParam (JAX-RS) which caused id=null and
+  IllegalArgumentException. Fixed to @PathVariable (Spring MVC).
+
+====================================================================
+  3. LOAN-SERVICE
+  Base URL: /api/loan
+====================================================================
+
+--------------------------------------------------------------------
+  POST /api/loan/borrowbook
+  Borrow a book
+--------------------------------------------------------------------
+  Request Body:
+  {
+    "title" : "Clean Code",
+    "userId": 1
+  }
+
+  NOTE: title must match EXACTLY (case-sensitive) with the book title
+  stored in Book-Service.
+
+  Before creating loan, service validates:
+    1. Book availability via BookClient.checkAvailability(title)
+    2. User eligibility via UserClient.checkUserStatus(userId)
+    3. Decrements copiesAvailable in Book-Service
+
+  Response: 200 OK
+  {
+    "statusCode": 200,
+    "status"    : "SUCCESS",
+    "message"   : "Book borrowed successfully",
+    "data"      : {
+      "loanId"    : 1,
+      "title"     : "Clean Code",
+      "userId"    : 1,
+      "borrowAt"  : "2026-03-16",
+      "dueDate"   : "2026-03-21",
+      "returnedAt": null,
+      "totalAmount": null,
+      "status"    : "BORROWED"
+    }
+  }
+
+  Loan Entity Field Names (actual):
+    loanId      → primary key (NOT "id")
+    borrowAt    → borrow date (NOT "borrowedAt")
+    returnedAt  → return date
+    status      → BORROWED, RETURNED, OVERDUE
+
+--------------------------------------------------------------------
+  PUT /api/loan/returnbook/{loanId}
+  Return a book by loan ID
+--------------------------------------------------------------------
+  Path Variable: loanId (Long)
+
+  Example: PUT /api/loan/returnbook/1
+
+  On return, service:
+    1. Sets returnedAt = LocalDate.now()
+    2. Sets status = RETURNED
+    3. Calls BookClient to increment copiesAvailable
+
+  Response: 200 OK — updated Loan object with returnedAt date set
+
+--------------------------------------------------------------------
+  GET /api/loan/{userId}/Loans
+  Get all loans for a specific user
+--------------------------------------------------------------------
+  Path Variable: userId (Long)
+
+  NOTE: "Loans" is capitalized — must match exactly.
+
+  Example: GET /api/loan/1/Loans
+
+  Response: 200 OK — array of Loan objects for that user
+  Returns 403 if user has no loans (handle gracefully in frontend).
+
+--------------------------------------------------------------------
+  GET /api/loan                           ← UPDATED
+  Get all loans list
+--------------------------------------------------------------------
+  UPDATED: Previously returned Long count.
+  Now returns full list of all loans.
+
+  Response: 200 OK
+  {
+    "statusCode": 200,
+    "status"    : "SUCCESS",
+    "message"   : "All loans retrieved",
+    "data"      : [ { ...loan objects... } ]
+  }
+
+====================================================================
+  4. FINE-SERVICE
+  Base URL: /api/fines
+====================================================================
+
+--------------------------------------------------------------------
+  POST /api/fines/createfine?loanId={loanId}
+  Manually create a fine for an overdue loan
+--------------------------------------------------------------------
+  Query Param: loanId (Long)
+
+  Example: POST /api/fines/createfine?loanId=1
+
+  Response: 200 OK
+  {
+    "statusCode": 200,
+    "status"    : "SUCCESS",
+    "message"   : "Fine created",
+    "data"      : {
+      "loanId"      : 1,
+      "amount"      : 50.00,
+      "overdueSince": "2026-03-10",
+      "status"      : "PENDING"
+    }
+  }
+
+--------------------------------------------------------------------
+  GET /api/fines
+  Get all fines
+--------------------------------------------------------------------
+  Response: 200 OK
+  {
+    "statusCode": 200,
+    "data"      : [ { ...fine objects... } ]
+  }
+
+--------------------------------------------------------------------
+  GET /api/fines/getallpendingfines
+  Get all PENDING fines only
+--------------------------------------------------------------------
+  Response: 200 OK — array of Fine objects with status = PENDING
+
+  Background: @Scheduled cron runs daily to auto-create fines.
+  Fine formula: daysOverdue × dailyFineRate
+
+====================================================================
+  5. REACT FRONTEND
+  http://localhost:3000
+====================================================================
+
+  All API calls go through:
+    package.json proxy → http://localhost:9095
+
+  Key frontend utility functions (src/api.js):
+
+  req(method, path, body)
+    - Adds Cache-Control: no-cache headers on all requests
+    - Adds ?_t=Date.now() timestamp to all GET requests
+      to bypass Spring @Cacheable stale data
+
+  unwrap(json)
+    - Extracts payload from wrapped responses
+    - Checks keys in order: data → list → users → books → loans → fines
+    - Returns plain value, array, or object as-is
+
+  toArray(val)
+    - Always returns an array
+    - Wraps single object in array if needed
+    - Returns [] for null/undefined
+    - Prevents "Objects are not valid as React child" errors
+
+  normalizeLoan(l)
+    - Maps Loan entity non-standard field names:
+      loanId     → id
+      borrowAt   → borrowedAt
+      returnredAt (typo in entity) → returnedAt
+
+====================================================================
+  6. CACHE STRATEGY
+====================================================================
+
+  All services use Spring @Cacheable / @CacheEvict:
+
+  READ  → @Cacheable(value="books", key="'all'")
+          Served from cache after first DB fetch
+
+  WRITE → @CacheEvict(value="books", allEntries=true)
+          Clears ALL cache entries so next read is fresh
+
+  CRITICAL: Use allEntries=true on write methods.
+  Using key="#id" only evicts the single entry —
+  the "all" list cache remains stale.
+
+  Frontend also busts cache with:
+    GET /api/books?_t=1710123456789
+  This forces Spring to skip @Cacheable and hit the DB.
+
+====================================================================
+  7. KNOWN ISSUES & FIXES
+====================================================================
+
+  Issue: Book still shows after delete
+  Fix  : Added @CacheEvict(allEntries=true) to deleteBook()
+         in BookServiceImpl
+
+  Issue: New user not appearing after register
+  Fix  : Added @CacheEvict(allEntries=true) to register()
+         in LibraryUserServieImpl
+
+  Issue: DELETE /api/users/deletebyid/{id} throws NullPointerException
+  Fix  : Changed @PathParam to @PathVariable in LibraryUserController
+
+  Issue: PUT /api/users/updateUser/{id} returns 404
+  Fix  : Changed @PutMapping("/updateUser/id") to "/updateUser/{id}"
+
+  Issue: Return book throws ClassCastException
+  Fix  : Removed @Cacheable from availabiltyBook() in
+         BookCopiesUpdateServiceImpl — was caching Book object
+         but return type is Integer
+
+  Issue: returnedAt date not updating after return
+  Fix  : Changed @CachePut to @CacheEvict(allEntries=true)
+         on returnBook() in LoanServiceImpl
+
+  Issue: Loans page shows all dashes (---)
+  Fix  : Updated normalizeLoan() to map loanId→id, borrowAt→borrowedAt
+
+  Issue: Loan status shows UNKNOWN badge
+  Fix  : Added BORROWED mapping to LoanBadge component
+         (entity uses BORROWED not ACTIVE)
+
+====================================================================
+  8. CURL EXAMPLES — END-TO-END FLOW
+====================================================================
+
+  # Step 1 — Register a user
+  curl -X POST http://localhost:9095/api/users/register \
+    -H "Content-Type: application/json" \
+    -d '{"userName":"john","email":"john@test.com","password":"pass","role":"STUDENT"}'
+
+  # Step 2 — Add a book
+  curl -X POST http://localhost:9095/api/books/addbook \
+    -H "Content-Type: application/json" \
+    -d '{"title":"Clean Code","author":"Robert Martin","category":"Programming","totalCopies":3}'
+
+  # Step 3 — Check book availability
+  curl http://localhost:9095/api/books/Clean%20Code/availability
+
+  # Step 4 — Borrow the book
+  curl -X POST http://localhost:9095/api/loan/borrowbook \
+    -H "Content-Type: application/json" \
+    -d '{"title":"Clean Code","userId":1}'
+
+  # Step 5 — Get all loans
+  curl http://localhost:9095/api/loan
+
+  # Step 6 — Return the book
+  curl -X PUT http://localhost:9095/api/loan/returnbook/1
+
+  # Step 7 — Create a fine manually
+  curl -X POST "http://localhost:9095/api/fines/createfine?loanId=1"
+
+  # Step 8 — Get all pending fines
+  curl http://localhost:9095/api/fines/getallpendingfines
+
+====================================================================
+  Built with Java 21 · Spring Boot 3.5 · Spring Cloud · React 18
+====================================================================
