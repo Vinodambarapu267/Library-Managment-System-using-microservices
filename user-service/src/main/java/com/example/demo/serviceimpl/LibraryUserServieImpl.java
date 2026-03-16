@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.UserDto;
@@ -28,6 +29,7 @@ public class LibraryUserServieImpl implements LibraryUserServie {
 	private UserRepository userRepository;
 
 	@Override
+	 @CacheEvict(value = "libraryusers", allEntries = true)
 	public LibraryUser register(LibraryUser libraryUser) {
 		log.debug("Registering a user email='{}'", libraryUser.getEmail());
 		Optional<LibraryUser> byEmail = userRepository.findByEmail(libraryUser.getEmail());
@@ -55,7 +57,10 @@ public class LibraryUserServieImpl implements LibraryUserServie {
 	}
 
 	@Override
-	@CachePut(value = "libraryusers", key = "#id")
+	@Caching(
+	        put   = { @CachePut(value = "libraryusers", key = "#id") },
+	        evict = { @CacheEvict(value = "libraryusers", key = "'all'") }
+	    )
 	public LibraryUser updateUser(Long id, UserDto userDto) {
 		log.debug("Updating a user by ID:{}", id);
 		LibraryUser existedUser = userRepository.findById(id).orElseThrow(() -> {
@@ -85,7 +90,10 @@ public class LibraryUserServieImpl implements LibraryUserServie {
 	}
 
 	@Override
-	@CacheEvict(value = "libraryusers", key = "#id")
+	 @Caching(evict = {
+		        @CacheEvict(value = "libraryusers", allEntries = true),  // clears list cache
+		        @CacheEvict(value = "UserRoleStatus", key = "#id"),      // clears role cache
+		    })
 	public void deleteById(Long id) {
 		log.debug("Deleting user by ID: {}", id);
 		LibraryUser remove = userRepository.findById(id).orElseThrow(() -> {

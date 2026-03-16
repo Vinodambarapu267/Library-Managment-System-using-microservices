@@ -55,17 +55,11 @@ public class BookCopiesUpdateServiceImpl implements BookCopiesUpdateService {
 		book.returnBook();
 		return bookRepository.save(book);
 	}
-
 	@Override
-	@Cacheable(value = "books",key = "#title")
+	@Cacheable(value = "bookAvailability", key = "#title")
 	public Integer availabiltyBook(String title) {
-		Book book = bookRepository.findByTitle(title).orElseThrow(() -> new RuntimeException("Book Not found"));
-		Integer copiesAvailable = book.getCopiesAvailable();
-		if(copiesAvailable<=0) {
-			throw new RuntimeException("Book Copies Not Available");
-		}
-
-		return copiesAvailable;
+	    Book book = bookRepository.findByTitle(title)
+	        .orElseThrow(() -> new BookNotFoundException("Book not found"));
+	    return book.getCopiesAvailable();
 	}
-
 }

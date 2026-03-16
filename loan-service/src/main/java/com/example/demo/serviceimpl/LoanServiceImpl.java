@@ -5,6 +5,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -39,8 +40,8 @@ public class LoanServiceImpl implements LoanService {
 	private BookClient bookClient;
 	@Autowired
 	private UserClient userClient;
-
 	@Override
+	@CacheEvict(value = "loans", allEntries = true)
 	public Loan borrowBook(BorrowRequest borrowRequest) {
 		log.debug("Borrow book request: userId={}, title='{}'", borrowRequest.getUserId(), borrowRequest.getTitle());
 		List<Loan> availableLoans = loanRepository.findAllByUserIdAndStatus(borrowRequest.getUserId(),
@@ -79,32 +80,40 @@ public class LoanServiceImpl implements LoanService {
 		return save;
 	}
 
-	@CachePut(value = "loans", key = "#loandId")
+	@Override
+	@CacheEvict(value = "loans", allEntries = true)
 	public Loan returnBook(Long loanId) {
-		log.debug("Return book request: loanId={}", loanId);
-		Loan existedLoan = loanRepository.findById(loanId).orElseThrow(() -> {
-			log.warn("Loan not found: loanId={}", loanId);
-			return new LoanNotFoundException("Loan not found");
-		});
-		if (existedLoan.getStatus().equals(LoanStatus.RETURNED.name())) {
-			log.warn("Book already returned: loanId={}, title='{}'", loanId, existedLoan.getTitle());
-			throw new BookAlreadyReturnedException(" Already Returned the book : " + existedLoan.getTitle());
-		}
+	    log.debug("Return book request: loanId={}", loanId);
 
-		log.debug("Checking availability before return: title='{}'", existedLoan.getTitle());
-		Integer copiesAvailable = bookClient.checkAvailability(existedLoan.getTitle());
+	    Loan existedLoan = loanRepository.findById(loanId).orElseThrow(() -> {
+	        log.warn("Loan not found: loanId={}", loanId);
+	        return new LoanNotFoundException("Loan not found");
+	    });
 
-		existedLoan.setReturnredAt(LocalDate.now());
-		existedLoan.setStatus(LoanStatus.RETURNED.name());
-		existedLoan.setTitle(existedLoan.getTitle());
+	    if (existedLoan.getStatus().equals(LoanStatus.RETURNED.name())) {
+	        log.warn("Book already returned: loanId={}", loanId);
+	        throw new BookAlreadyReturnedException(
+	            "Already Returned the book: " + existedLoan.getTitle()
+	        );
+	    }
 
-		Loan returned = loanRepository.save(existedLoan);
-		Integer newCopies = copiesAvailable + 1;
-		bookClient.updateBookCopies(existedLoan.getTitle(), newCopies);
-		log.info("Book returned successfully: loanId={}", loanId);
-		return returned;
+	    // Get current availability — Integer returned directly
+	    Integer copiesAvailable = bookClient.checkAvailability(existedLoan.getTitle());
+	    log.debug("Current copies available: {}", copiesAvailable);
+
+	    // Update loan
+	    existedLoan.setReturnedAt(LocalDate.now());
+	    existedLoan.setStatus(LoanStatus.RETURNED.name());
+	    Loan returned = loanRepository.save(existedLoan);
+
+	    // Increment book copies
+	    Integer newCopies = copiesAvailable + 1;
+	    bookClient.updateBookCopies(existedLoan.getTitle(), newCopies);
+	    log.info("Book returned: loanId={}, newCopies={}, returnedAt={}",
+	        loanId, newCopies, returned.getReturnedAt());
+
+	    return returned;
 	}
-
 	@Cacheable(value = "loans", key = "'all'")
 	public List<Loan> findAll() {
 		log.debug("Fetching all loans");

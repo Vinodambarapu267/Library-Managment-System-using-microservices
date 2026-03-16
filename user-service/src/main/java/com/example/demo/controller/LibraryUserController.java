@@ -49,8 +49,8 @@ public class LibraryUserController {
 		}
 	}
 
-	@PutMapping("/updateUser/id")
-	public ResponseEntity<?> updateByuser(@RequestParam Long id, @RequestBody UserDto dto) {
+	@PutMapping("/updateUser/{id}")
+	public ResponseEntity<?> updateByuser(@PathVariable Long id, @RequestBody UserDto dto) {
 		log.debug("Received  user updation reques ID: {}", id);
 		LibraryUser updateUser = libraryUserServie.updateUser(id, dto);
 		if (updateUser != null) {
@@ -91,7 +91,7 @@ public class LibraryUserController {
 	}
 
 	@DeleteMapping("/deletebyid/{id}")
-	public ResponseEntity<?> deleteById(@PathParam(value = "id") Long id) {
+	public ResponseEntity<?> deleteById(@PathVariable Long id) {
 		log.debug("Received  user deletion request ID={}", id);
 		libraryUserServie.deleteById(id);
 		return ResponseEntity.ok(new ResponseMessage(HttpURLConnection.HTTP_OK,

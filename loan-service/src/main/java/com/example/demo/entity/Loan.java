@@ -24,7 +24,7 @@ public class Loan {
 	private Long userId;
 	private LocalDate borrowAt;
 	private LocalDate dueDate;
-	private LocalDate returnredAt;
+	private LocalDate returnedAt;
 	private Double totalAmount;
 	private String status;
 }

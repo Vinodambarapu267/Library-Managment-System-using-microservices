@@ -171,10 +171,11 @@ public class BookController {
 	}
 
 	@GetMapping("/{title}/availability")
-	public ResponseEntity<?> checkAvailability(@PathVariable String title) {
-		log.debug("Received check availability request : title='{}'", title);
-		Integer availabiltyBook = bookCopiesUpdateService.availabiltyBook(title);
-		return ResponseEntity.ok(availabiltyBook);
+	public Integer checkAvailability(@PathVariable String title) {
+	    log.debug("Received check availability request: title='{}'", title);
+	    Integer availability = bookCopiesUpdateService.availabiltyBook(title);  
+	    return availability;
 	}
-
 }
+
+

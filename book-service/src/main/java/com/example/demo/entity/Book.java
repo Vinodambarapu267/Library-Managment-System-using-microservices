@@ -33,12 +33,18 @@ public class Book {
 	private String bookStatus = "AVAILABLE";
 
 	@PrePersist
-	@PreUpdate
-	public void validateCopies() {
-		if (copiesAvailable >= totalCopies || copiesAvailable < 0) {
-			throw new IllegalStateException("Invalid copy counts");
-		}
+	
+	private void validateCopies() {
+	    // ✅ FIX: Handle null + set default value
+	    if (this.copiesAvailable == null) {
+	        this.copiesAvailable = (this.totalCopies != null) ? this.totalCopies : 1;
+	    }
+	    
+	    if (this.copiesAvailable <= 0) {
+	        throw new IllegalArgumentException("Copies available must be positive");
+	    }
 	}
+
 	// Enhanced methods
 	public void issueBook() {
 		if (copiesAvailable <= 0) {
