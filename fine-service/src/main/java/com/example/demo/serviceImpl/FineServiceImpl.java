@@ -44,14 +44,14 @@ public class FineServiceImpl implements FineService {
 		Fine fine = new Fine();
 		fine.setAmount(overDue.getTotalAmount());
 		fine.setOverDueSince(LocalDate.now().minusDays(overDue.getOverDueDays()));
-		fine.setFineStatus(FineStatus.PENDING.name());
+		fine.setFineStatus(overDue.getTotalAmount()==0D?FineStatus.NO_FINE.name():FineStatus.PENDING.name());
 		fine.setLoanId(loanId);
 		Fine save = fineRepository.save(fine);
 		return save;
 	}
 
 	@Override
-	@Cacheable(value = "loans",key = "'all'")
+	@Cacheable(value = "fines", key = "'all'")
 	public List<Fine> getAllFines() {
 		log.debug("Fetching all fines");
 		List<Fine> all = fineRepository.findAll();
@@ -64,7 +64,7 @@ public class FineServiceImpl implements FineService {
 	}
 
 	@Override
-	@Cacheable(value = "loans",key = "'allpendingloans'")
+	@Cacheable(value = "fines",key = "'allpendingloans'")
 	public List<Fine> getAllPendingFine() {
 		log.debug("Fetching all pending fines");
 		List<Fine> byFineStatus = fineRepository.findByFineStatus(FineStatus.PENDING.name());
@@ -79,7 +79,7 @@ public class FineServiceImpl implements FineService {
 	@Override
 	@CircuitBreaker(name = "dailyFines", fallbackMethod = "fallbackProcessDailyFines")
 	@Scheduled(cron = "0  0 7 * * *")
-	@CacheEvict(value = "loans",key = "'allfines'")
+	@CacheEvict(value = "fines",key = "'allfines'")
 	public void processDailyFines() {
 		log.info("Starting daily fines processing");
 		List<Fine> allFines = fineRepository.findAll();

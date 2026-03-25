@@ -1,5 +1,6 @@
 package com.example.demo.entity;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
 import com.example.demo.utility.FineStatus;
@@ -18,7 +19,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Fine {
+public class Fine  implements Serializable{
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private Long fineId;

@@ -1,5 +1,5 @@
 package com.example.demo.utility;
 
 public enum FineStatus {
-	PENDING, PAID
+	PENDING, PAID, NO_FINE
 }

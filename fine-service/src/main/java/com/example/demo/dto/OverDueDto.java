@@ -1,5 +1,7 @@
 package com.example.demo.dto;
 
+import java.io.Serializable;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class OverDueDto {
+public class OverDueDto implements Serializable {
 	private Long loanId;
 	private Integer overDueDays;
 	private Double totalAmount;
