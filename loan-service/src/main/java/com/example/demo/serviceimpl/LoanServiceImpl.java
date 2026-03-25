@@ -82,6 +82,7 @@ public class LoanServiceImpl implements LoanService {
 
 	@Override
 	@CacheEvict(value = "loans", allEntries = true)
+	@CachePut(value = "loans", key = "#loanId")
 	public Loan returnBook(Long loanId) {
 	    log.debug("Return book request: loanId={}", loanId);
 
