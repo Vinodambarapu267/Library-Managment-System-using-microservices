@@ -22,7 +22,7 @@ public class BookCopiesUpdateServiceImpl implements BookCopiesUpdateService {
 
 	@Override
 	@CachePut(value = "books",key = "#title")
-	@CacheEvict(value = "booksList",allEntries = true)
+	@CacheEvict(value = "books",allEntries = true)
 	public Book updateTotalBookCopies(String title, Integer newCopies) {
 	    Book book = bookRepository.findByTitle(title).orElseThrow(() -> new BookNotFoundException("Book not found"));
 	    
@@ -56,7 +56,7 @@ public class BookCopiesUpdateServiceImpl implements BookCopiesUpdateService {
 		return bookRepository.save(book);
 	}
 	@Override
-	@Cacheable(value = "bookAvailability", key = "#title")
+	@Cacheable(value = "books", key = "#title")
 	public Integer availabiltyBook(String title) {
 	    Book book = bookRepository.findByTitle(title)
 	        .orElseThrow(() -> new BookNotFoundException("Book not found"));

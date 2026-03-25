@@ -48,7 +48,7 @@ public class BookServiceImpl implements BookService {
 
 	@Override
 	 @Caching(
-		        put    = { @CachePut(value = "book", key = "#id") },
+		        put    = { @CachePut(value = "books", key = "#id") },
 		        evict  = { @CacheEvict(value = "books", allEntries = true) }
 		    )
 	public Book updateBook(Long id, BookDto bookDto) {
@@ -86,7 +86,7 @@ public class BookServiceImpl implements BookService {
 	@Override
 	   @Caching(evict = {
 		        @CacheEvict(value = "books", allEntries = true),   // clears list cache
-		        @CacheEvict(value = "book",  allEntries = true),   // clears individual cache
+		        @CacheEvict(value = "books",  allEntries = true),   // clears individual cache
 		    })
 	public void deleteBook(String isbn) {
 		log.debug("Deleting book by ISBN : {}", isbn);
