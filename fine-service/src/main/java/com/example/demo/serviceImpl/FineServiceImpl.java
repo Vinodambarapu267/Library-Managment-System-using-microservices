@@ -52,6 +52,7 @@ public class FineServiceImpl implements FineService {
 
 	@Override
 	@Cacheable(value = "fines", key = "'all'")
+	@CacheEvict(value = "fines",allEntries = true)
 	public List<Fine> getAllFines() {
 		log.debug("Fetching all fines");
 		List<Fine> all = fineRepository.findAll();
