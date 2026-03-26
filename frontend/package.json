@@ -8,7 +8,8 @@
   },
    "scripts": {
     "prebuild": "chmod +x node_modules/.bin/react-scripts",
-    "build": "react-scripts build"
+    "build": "react-scripts build",
+    "start": "react-scripts start"
   }
 ,
   "browserslist": {
