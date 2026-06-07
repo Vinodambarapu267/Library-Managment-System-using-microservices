@@ -116,6 +116,7 @@ public class LoanServiceImpl implements LoanService {
 	    return returned;
 	}
 	@Cacheable(value = "loans", key = "'all'")
+	@CacheEvict(value = "loans",allEntries = true)
 	public List<Loan> findAll() {
 		log.debug("Fetching all loans");
 		List<Loan> all = loanRepository.findAll();
