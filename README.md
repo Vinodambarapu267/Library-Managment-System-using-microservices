@@ -25,14 +25,14 @@ LibraMS is composed of **four independent microservices**, each with its own dat
 
 ```
                     ┌─────────────────────────┐
-                    │    React Frontend :3000  │
-                    │  (Vite/CRA + Fetch API)  │
+                    │   React Frontend :3000  │
+                    │       (Fetch API)       │
                     └────────────┬────────────┘
                                  │ /api/*
                                  ▼
                     ┌─────────────────────────┐
-                    │    API Gateway   :9095   │
-                    │  (Spring Cloud MVC GW)   │
+                    │    API Gateway   :9095  │
+                    │  (Spring Cloud MVC GW)  │
                     └──────┬──────┬─────┬─────┘
                            │      │     │
            ┌───────────────┘      │     └──────────────────┐
@@ -310,7 +310,7 @@ public Book createBook(Book book) { ... }
 | Databases | MySQL 8.0 — one DB per service |
 | Build Tool | Maven |
 | Frontend | React 18 + Hooks |
-| Frontend Build | Vite / Create React App |
+| Frontend Build |  Create React App |
 | HTTP Layer | Fetch API + custom `req()` utility |
 | Tracing | Zipkin + Spring Cloud Sleuth |
 | Containerization | Docker (optional) |
@@ -390,7 +390,7 @@ mvn spring-boot:run
 ### Step 5 — Start React Frontend
 
 ```bash
-cd librams-final
+cd frontend
 npm install
 npm start
 ```
@@ -409,6 +409,8 @@ npm start
 | React Frontend | `http://localhost:3000` |
 | Books API | `http://localhost:9095/api/books` |
 | Users API | `http://localhost:9095/api/users` |
+| loans API | `http://localhost:9095/api/loans` |
+| fines API | `http://localhost:9095/api/fines` |
 
 ---
 
@@ -463,7 +465,7 @@ Library-Managment-System-using-microservices/
 ├── user-service/           # User microservice :9091
 ├── loan-service/           # Loan microservice :9092
 ├── fine-service/           # Fine microservice :9093
-├── librams-final/          # React 18 frontend :3000
+├── frontend/               # React 18 frontend :3000
 ├── .gitignore
 └── README.md
 ```

@@ -16,10 +16,10 @@ import {
 
 export default function Dashboard({ onNav, toast }) {
   const [stats, setStats] = useState({
-    books: "—",
-    users: "—",
-    loans: "—",
-    fines: "—",
+    books: "0",
+    users: "0",
+    loans: "0",
+    fines: "0",
   });
   const [books, setBooks] = useState([]);
   const [fines, setFines] = useState([]);
@@ -45,7 +45,7 @@ export default function Dashboard({ onNav, toast }) {
           ? typeof rL.value === "number"
             ? rL.value
             : toArray(rL.value).length
-          : "—",
+          :0,
       fines: fArr.length,
     });
     setBooks(bArr.slice(0, 6));
@@ -101,7 +101,6 @@ export default function Dashboard({ onNav, toast }) {
           />
         </div>
 
-       
         {/* Recent tables */}
         <div
           style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 20 }}
@@ -123,9 +122,9 @@ export default function Dashboard({ onNav, toast }) {
               {books.map((b, i) => (
                 <Tr key={b.id ?? i}>
                   <Td>
-                    <strong>{String(b.title ?? "—")}</strong>
+                    <strong>{String(b.title ?? 0)}</strong>
                   </Td>
-                  <Td muted>{String(b.author ?? "—")}</Td>
+                  <Td muted>{String(b.author ?? 0)}</Td>
                   <Td>
                     {String(b.copiesAvailable ?? 0)}/
                     {String(b.totalCopies ?? 0)}
@@ -154,7 +153,7 @@ export default function Dashboard({ onNav, toast }) {
             >
               {fines.map((f, i) => (
                 <Tr key={f.loanId ?? i}>
-                  <Td mono>{String(f.loanId ?? "—")}</Td>
+                  <Td mono>{String(f.loanId ?? 0)}</Td>
                   <Td>
                     <strong>₹{parseFloat(f.amount || 0).toFixed(2)}</strong>
                   </Td>
